@@ -16,6 +16,10 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
 
+app.use(cors({
+    origin: ['http://localhost:3000', 'http://localhost:3001'], // Sementara hanya izinkan localhost
+}));
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, uploadDir);

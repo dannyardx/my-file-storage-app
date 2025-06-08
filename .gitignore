@@ -1,0 +1,23 @@
+# Node
+node_modules/
+.env
+
+# Build outputs
+build/
+dist/
+
+# Logs
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Uploads (untuk backend)
+backend/uploads/
