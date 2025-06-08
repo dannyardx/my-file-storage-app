@@ -3,10 +3,9 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const cors = require('cors'); // Mengimpor cors
+const cors = require('cors');
 
 const app = express();
-// Menggunakan port dari environment variable (misalnya dari Render), fallback ke 5000 untuk lokal
 const port = process.env.PORT || 5000;
 
 // Middleware untuk CORS
@@ -14,11 +13,10 @@ const port = process.env.PORT || 5000;
 const allowedOrigins = [
     'http://localhost:3000',             // Untuk pengembangan lokal frontend-user
     'http://localhost:3001',             // Untuk pengembangan lokal frontend-admin
-    'https://classy-taiyaki-e7ded3.netlify.app/',          // URL domain kustom frontend-user Anda
-    'https://my-file-storage-app.netlify.app/',    // URL subdomain kustom frontend-admin Anda
-    // Tambahkan URL Netlify acak di sini jika Anda masih menggunakannya selama transisi DNS:
-    // 'https://happy-forest-12345.netlify.app', // Contoh URL Netlify frontend-user sementara
-    // 'https://admin-fancy-name-67890.netlify.app' // Contoh URL Netlify frontend-admin sementara
+    'https://classy-taiyaki-e7ded3.netlify.app',    // <--- HAPUS GARIS MIRING DI AKHIR
+    'https://my-file-storage-app.netlify.app',     // <--- HAPUS GARIS MIRING DI AKHIR
+    'https://thisismine.my.id',          // URL domain kustom frontend-user Anda
+    'https://admin.thisismine.my.id'     // URL subdomain kustom frontend-admin Anda
 ];
 
 app.use(cors({
@@ -27,7 +25,7 @@ app.use(cors({
         if (!origin) return callback(null, true);
         if (allowedOrigins.indexOf(origin) === -1) {
             const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
-            console.warn(msg); // Log peringatan di server jika Origin tidak diizinkan
+            console.warn(msg);
             return callback(new Error(msg), false);
         }
         return callback(null, true);
@@ -38,7 +36,6 @@ app.use(cors({
 app.use(express.json());
 
 // Direktori untuk menyimpan file yang diunggah
-// Gunakan path.join untuk kompatibilitas lintas OS
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
@@ -51,7 +48,7 @@ const storage = multer.diskStorage({
     },
     filename: (req, file, cb) => {
         const originalName = file.originalname;
-        const fileName = `${Date.now()}-${originalName}`; // Menambahkan timestamp untuk keunikan
+        const fileName = `${Date.now()}-${originalName}`;
         console.log(`[BACKEND-UPLOAD] Storing file: ${originalName} as ${fileName}`);
         cb(null, fileName);
     }
@@ -74,8 +71,7 @@ const upload = multer({
 });
 
 // Middleware untuk otentikasi admin (contoh sederhana)
-// Penting: ADMIN_SECRET_TOKEN harus diatur di environment variable di produksi!
-const ADMIN_SECRET_TOKEN = process.env.ADMIN_SECRET_TOKEN || 'ADMIN123'; // Mengambil dari env, fallback ke hardcode
+const ADMIN_SECRET_TOKEN = process.env.ADMIN_SECRET_TOKEN || 'ADMIN123';
 
 const authenticateAdmin = (req, res, next) => {
     const adminToken = req.headers['x-admin-token'];
@@ -86,11 +82,9 @@ const authenticateAdmin = (req, res, next) => {
 };
 
 // ===========================================
-//             ROUTES UNTUK PENGGUNA (PUBLIC)
+// ROUTES UNTUK PENGGUNA (PUBLIC)
 // ===========================================
 
-// Endpoint: GET /api/files
-// Mengembalikan daftar file yang tersedia untuk publik
 app.get('/api/files', (req, res) => {
     console.log("[BACKEND] Request received for /api/files (public list)");
     if (!fs.existsSync(uploadDir)) {
@@ -113,11 +107,10 @@ app.get('/api/files', (req, res) => {
             if (parts.length > 1 && /^\d+$/.test(parts[0])) {
                 originalName = parts.slice(1).join('-');
             }
-            // Untuk file publik, Anda mungkin ingin menyertakan serverFileName untuk akses detail
             return {
-                id: file, // Ini adalah serverFileName
+                id: file,
                 name: originalName,
-                serverFileName: file, // Tambahkan serverFileName secara eksplisit untuk konsistensi frontend
+                serverFileName: file,
                 description: `File ${path.extname(originalName).substring(1).toUpperCase()}`,
             };
         });
@@ -126,8 +119,6 @@ app.get('/api/files', (req, res) => {
     });
 });
 
-// Endpoint: GET /api/files/info/:fileName
-// Mengembalikan informasi detail file untuk halaman unduhan
 app.get('/api/files/info/:fileName', (req, res) => {
     const serverFileName = req.params.fileName;
     const filePath = path.join(uploadDir, serverFileName);
@@ -147,17 +138,14 @@ app.get('/api/files/info/:fileName', (req, res) => {
             originalName = parts.slice(1).join('-');
         }
 
-        // Deskripsi ini tidak diambil dari data upload, hanya dibuat secara dinamis.
-        // Jika Anda ingin menyimpan deskripsi kustom, Anda butuh database.
         const description = `File ${path.extname(originalName).substring(1).toUpperCase()} (Ukuran: ${(stats.size / (1024 * 1024)).toFixed(2)} MB)`;
 
         const fileInfo = {
-            originalFileName: originalName, // Sesuaikan dengan yang diharapkan frontend
-            serverFileName: serverFileName, // Penting! Pastikan ini ada
+            originalFileName: originalName,
+            serverFileName: serverFileName,
             description: description,
-            fileSize: stats.size, // Ukuran dalam bytes
-            uploadDate: stats.birthtime.toISOString() // Tanggal upload (creation time)
-            // isProtected: false // Tambahkan ini jika Anda punya logika proteksi password
+            fileSize: stats.size,
+            uploadDate: stats.birthtime.toISOString()
         };
         console.log("[BACKEND-INFO] File info sent:", fileInfo);
         res.json(fileInfo);
@@ -167,15 +155,12 @@ app.get('/api/files/info/:fileName', (req, res) => {
     }
 });
 
-// Endpoint: GET /api/files/download/:fileName
-// Ini adalah endpoint yang akan langsung memicu unduhan file
 app.get('/api/files/download/:fileName', (req, res) => {
     const serverFileName = req.params.fileName;
     const filePath = path.join(uploadDir, serverFileName);
     console.log(`[BACKEND-DOWNLOAD] Download request received for: ${serverFileName}`);
     console.log(`[BACKEND-DOWNLOAD] Attempting to serve file from path: ${filePath}`);
 
-    // Cek apakah file ada
     if (fs.existsSync(filePath)) {
         const parts = serverFileName.split('-');
         let originalName = serverFileName;
@@ -185,12 +170,10 @@ app.get('/api/files/download/:fileName', (req, res) => {
         console.log(`[BACKEND-DOWNLOAD] Serving file: ${filePath} as ${originalName}`);
         res.download(filePath, originalName, (err) => {
             if (err) {
-                // Log error lebih spesifik
                 if (err.code === 'ECONNABORTED' || res.headersSent) {
                     console.warn('[BACKEND-DOWNLOAD] Client disconnected during download or headers already sent.');
                 } else {
                     console.error("[BACKEND-DOWNLOAD] Error during file download:", err);
-                    // Pastikan tidak ada duplikat header jika terjadi error di tengah pengiriman
                     if (!res.headersSent) {
                         res.status(500).json({ message: 'Gagal mengunduh file.' });
                     }
@@ -205,12 +188,10 @@ app.get('/api/files/download/:fileName', (req, res) => {
     }
 });
 
-
 // ===========================================
-//             ROUTES UNTUK ADMIN
+// ROUTES UNTUK ADMIN
 // ===========================================
 
-// Endpoint: POST /api/admin/upload
 app.post('/api/admin/upload', authenticateAdmin, upload.single('file'), (req, res) => {
     console.log("[BACKEND] Admin upload request received.");
     if (!req.file) {
@@ -218,7 +199,6 @@ app.post('/api/admin/upload', authenticateAdmin, upload.single('file'), (req, re
         return res.status(400).json({ message: 'Tidak ada file yang diunggah.' });
     }
     const fileNameOnServer = req.file.filename;
-    // Deskripsi ini tidak disimpan secara persisten tanpa database
     const description = req.body.description || `File ${path.extname(req.file.originalname).substring(1).toUpperCase()}`;
 
     console.log(`[BACKEND] File uploaded: ${req.file.originalname} as ${fileNameOnServer}, Description: ${description}`);
@@ -227,13 +207,11 @@ app.post('/api/admin/upload', authenticateAdmin, upload.single('file'), (req, re
         fileName: req.file.originalname,
         serverFileName: fileNameOnServer,
         description: description,
-        fileSize: req.file.size, // Tambahkan ukuran file
-        uploadDate: new Date().toISOString() // Tambahkan tanggal upload
+        fileSize: req.file.size,
+        uploadDate: new Date().toISOString()
     });
 });
 
-// Endpoint: GET /api/admin/files
-// Mengembalikan daftar file lengkap dengan serverFileName untuk admin
 app.get('/api/admin/files', authenticateAdmin, (req, res) => {
     console.log("[BACKEND] Admin files list request received.");
     if (!fs.existsSync(uploadDir)) {
@@ -264,15 +242,13 @@ app.get('/api/admin/files', authenticateAdmin, (req, res) => {
                 console.warn(`[BACKEND] Could not stat file ${filePath}:`, statErr.message);
             }
 
-            // Deskripsi ini dibuat ulang, bukan diambil dari data upload
             return {
-                id: file, // Ini adalah serverFileName
+                id: file,
                 name: originalName,
-                serverFileName: file, // Penting untuk operasi delete/share
+                serverFileName: file,
                 description: `File ${path.extname(originalName).substring(1).toUpperCase()}`,
                 fileSize: stats ? stats.size : 0,
                 uploadDate: stats ? stats.birthtime.toISOString() : new Date().toISOString()
-                // isProtected: false // Jika Anda punya logika proteksi password
             };
         });
         console.log(`[BACKEND] Found ${fileList.length} files for admin list.`);
@@ -280,7 +256,6 @@ app.get('/api/admin/files', authenticateAdmin, (req, res) => {
     });
 });
 
-// Endpoint: DELETE /api/admin/files/:fileName
 app.delete('/api/admin/files/:fileName', authenticateAdmin, (req, res) => {
     const fileName = req.params.fileName;
     const filePath = path.join(uploadDir, fileName);
@@ -301,7 +276,6 @@ app.delete('/api/admin/files/:fileName', authenticateAdmin, (req, res) => {
     }
 });
 
-// Mulai server
 app.listen(port, () => {
-    console.log(`Server berjalan di port ${port}`); // Pesan log yang disesuaikan
+    console.log(`Server berjalan di port ${port}`);
 });
