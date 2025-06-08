@@ -1,6 +1,6 @@
 // frontend-admin/src/App.js
 
-import React, { useState, useEffect, useCallback } from 'react'; // Pastikan useState diimpor
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import './App.css';
 import Login from './Login';
@@ -13,13 +13,29 @@ function App() {
   const [newFile, setNewFile] = useState(null);
   const [newFileDescription, setNewFileDescription] = useState('');
 
-  // PERBAIKI DEKLARASI STATE INI
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [fileToDeleteName, setFileToDeleteName] = useState(''); // <--- BARIS INI YANG HARUS DIPERBAIKI
+  const [fileToDeleteName, setFileToDeleteName] = useState('');
 
+  // --- Bagian Penting untuk Variabel URL ---
+  // Ini adalah logika yang menentukan URL backend dan frontend user
+  // berdasarkan NODE_ENV.
+  // Saat Netlify membangun (deploy), NODE_ENV otomatis disetel ke 'production'.
+  // Jadi, jika deploy Netlify masih menunjuk ke localhost:5000,
+  // itu berarti Netlify tidak mendapatkan nilai REACT_APP_BACKEND_URL_PROD yang benar,
+  // atau ada cache yang kuat di Netlify.
+  const BACKEND_URL = process.env.NODE_ENV === 'production'
+    ? process.env.REACT_APP_BACKEND_URL_PROD
+    : process.env.REACT_APP_BACKEND_URL_DEV;
+
+  const FRONTEND_USER_URL = process.env.NODE_ENV === 'production'
+    ? process.env.REACT_APP_FRONTEND_USER_URL_PROD
+    : process.env.REACT_APP_FRONTEND_USER_URL_DEV;
+
+  // Pastikan ADMIN_SECRET_TOKEN ini hanya untuk demo di frontend.
+  // Seharusnya diatur di backend.
   const ADMIN_SECRET_TOKEN = 'ADMIN123';
-  const BACKEND_URL = 'http://localhost:5000';
-  const FRONTEND_USER_URL = 'http://localhost:3000';
+  // --- Akhir Bagian Penting ---
+
 
   const showNotification = useCallback((msg, type) => {
     console.log(`[Admin Info] Type: ${type}, Message: ${msg}`);
@@ -76,7 +92,6 @@ function App() {
         headers: {
           'x-admin-token': ADMIN_SECRET_TOKEN,
         },
-        body: formData,
       });
 
       if (!response.ok) {
