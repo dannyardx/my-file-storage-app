@@ -1,0 +1,122 @@
+/* frontend-admin/src/components/ConfirmationModal.css */
+
+/* Overlay di belakang modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75); /* Latar belakang semi-transparan yang lebih gelap */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Pastikan di atas semua elemen lain */
+    backdrop-filter: blur(8px); /* Efek blur yang lebih kuat */
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Kotak konten modal */
+.modal-content {
+    background-color: var(--dark-bg-secondary); /* Warna background card gelap admin */
+    padding: 2.5rem;
+    border-radius: 1rem; /* Sudut membulat */
+    box-shadow: 0 12px 30px var(--shadow-dark); /* Bayangan dalam yang lebih menonjol */
+    max-width: 480px; /* Lebar maksimum modal */
+    width: 90%; /* Mengambil 90% lebar layar di mobile */
+    text-align: center;
+    color: var(--dark-text-primary); /* Warna teks umum di modal */
+    border: 1px solid var(--dark-border-color); /* Border tipis yang lebih jelas */
+    box-sizing: border-box; /* Pastikan padding/border dihitung dalam lebar */
+}
+
+/* Judul modal */
+.modal-title {
+    font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+    color: var(--accent-purple); /* Warna aksen admin (ungu) */
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+/* Pesan modal */
+.modal-message {
+    font-size: clamp(1.0em, 1.5vw, 1.15em);
+    color: var(--dark-text-secondary); /* Warna teks sekunder/deskripsi */
+    margin-bottom: 2rem;
+    line-height: 1.7;
+    word-break: break-word; /* Memastikan teks panjang membungkus */
+}
+
+/* Wrapper tombol aksi */
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem; /* Spasi antar tombol */
+    margin-top: 2rem;
+}
+
+/* Tombol Batal */
+.btn-modal-cancel {
+    background-color: var(--dark-bg-tertiary); /* Warna lebih terang untuk latar belakang */
+    color: var(--dark-text-primary);
+    padding: 0.9rem 2.2rem;
+    border: none; /* Ubah dari 1px solid var(--dark-border-color); */
+    border-radius: 0.6rem;
+    cursor: pointer;
+    font-size: clamp(0.95em, 1.3vw, 1.05em);
+    font-weight: 500;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3); /* Tambah bayangan tipis */
+}
+
+.btn-modal-cancel:hover {
+    background-color: #2a2a2a; /* Sedikit lebih gelap saat hover */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+}
+
+/* Tombol Konfirmasi (Hapus) */
+.btn-modal-confirm {
+    background-color: #dc3545; /* Merah bahaya */
+    color: white;
+    padding: 0.9rem 2.2rem;
+    border: none;
+    border-radius: 0.6rem;
+    cursor: pointer;
+    font-size: clamp(0.95em, 1.3vw, 1.05em);
+    font-weight: 600;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4); /* Bayangan merah */
+}
+
+.btn-modal-confirm:hover {
+    background-color: #c82333; /* Merah lebih gelap saat hover */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.6);
+}
+
+/* Animasi */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0.7); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 550px) {
+    .modal-content {
+        padding: 2rem 1.5rem;
+    }
+    .modal-actions {
+        flex-direction: column; /* Tombol bertumpuk di mobile */
+        gap: 0.8rem;
+    }
+    .btn-modal-cancel, .btn-modal-confirm {
+        width: 100%; /* Tombol mengambil lebar penuh */
+    }
+}

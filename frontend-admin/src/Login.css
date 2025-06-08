@@ -1,0 +1,144 @@
+/* frontend-admin/src/Login.css */
+
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: var(--dark-bg-primary); /* Warna latar belakang gelap: HITAM PEKAT */
+    color: var(--dark-text-primary);
+    font-family: 'Inter', sans-serif;
+    padding: 2rem; /* Adjusted padding */
+}
+
+.login-card {
+    background-color: var(--dark-bg-secondary); /* Warna latar belakang card: Abu-abu sangat gelap */
+    padding: 3.5rem; /* Increased padding */
+    border-radius: 12px; /* More rounded corners */
+    box-shadow: 0 10px 25px var(--shadow-dark); /* Deeper shadow */
+    text-align: center;
+    max-width: 450px; /* Slightly wider max-width */
+    width: 100%;
+    border: 1px solid var(--dark-border-color); /* Border abu-abu gelap */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.login-card:hover {
+    transform: translateY(-5px); /* Slight lift on hover */
+    box-shadow: 0 12px 30px var(--shadow-dark); /* Stronger shadow on hover */
+}
+
+.login-card h2 {
+    color: var(--accent-green);
+    margin-bottom: 2.5rem; /* Increased margin */
+    font-size: clamp(2.2rem, 4.5vw, 3rem); /* Responsive font size */
+    font-weight: 700;
+}
+
+.form-group {
+    margin-bottom: 1.5rem; /* Adjusted margin */
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem; /* Adjusted margin */
+    font-weight: 500;
+    color: var(--dark-text-secondary);
+    font-size: 1.05em; /* Slightly larger label */
+}
+
+.form-group input[type="text"],
+.form-group input[type="password"] {
+    width: 100%;
+    padding: 0.9rem 1.1rem; /* Adjusted padding */
+    border: 1px solid var(--dark-border-color); /* Border abu-abu gelap */
+    border-radius: 8px; /* More rounded corners */
+    background-color: var(--dark-bg-tertiary); /* Input background: Abu-abu lebih terang */
+    color: var(--dark-text-primary);
+    font-size: 1em; /* Consistent font size */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="password"]:focus {
+    outline: none;
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 0 3px rgba(106, 92, 205, 0.3); /* Subtle focus glow */
+}
+
+.login-button {
+    background: linear-gradient(45deg, var(--accent-green), var(--accent-green-hover));
+    color: white;
+    padding: 1rem 2.5rem; /* Larger padding */
+    border: none;
+    border-radius: 25px; /* More rounded corners */
+    cursor: pointer;
+    font-size: clamp(1.05em, 1.5vw, 1.2em); /* Responsive font size */
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 199, 159, 0.3);
+    width: 100%;
+    margin-top: 1.5rem; /* Adjusted margin */
+}
+
+.login-button:hover {
+    background: linear-gradient(45deg, var(--accent-green-hover), #007c66);
+    transform: translateY(-3px); /* More pronounced lift */
+    box-shadow: 0 6px 15px rgba(0, 199, 159, 0.5);
+}
+
+.login-error-message {
+    color: #dc3545;
+    margin-top: -0.5rem; /* Pull up closer to input */
+    margin-bottom: 1rem;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .login-card {
+        padding: 2.5rem;
+        max-width: 90%;
+    }
+    .login-card h2 {
+        font-size: clamp(1.8rem, 5vw, 2.5rem);
+        margin-bottom: 2rem;
+    }
+    .form-group {
+        margin-bottom: 1.2rem;
+    }
+    .form-group input {
+        padding: 0.8rem 1rem;
+        font-size: 0.95em;
+    }
+    .login-button {
+        padding: 0.9rem 2rem;
+        font-size: clamp(1em, 2.5vw, 1.1em);
+    }
+}
+
+@media (max-width: 480px) {
+    .login-card {
+        padding: 2rem 1.5rem;
+    }
+    .login-card h2 {
+        font-size: clamp(1.5rem, 6vw, 2.2rem);
+        margin-bottom: 1.5rem;
+    }
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    .form-group label {
+        font-size: 0.95em;
+    }
+    .form-group input {
+        padding: 0.7rem 0.9rem;
+        font-size: 0.9em;
+    }
+    .login-button {
+        padding: 0.8rem 1.8rem;
+        font-size: 0.95em;
+    }
+}

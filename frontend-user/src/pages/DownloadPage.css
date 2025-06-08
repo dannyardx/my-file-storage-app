@@ -1,0 +1,180 @@
+/* frontend-user/src/pages/DownloadPage.css */
+
+.download-page-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh; /* Memastikan kontainer ini setidaknya setinggi viewport */
+    padding: 1.5rem; /* Adjusted padding */
+    background-color: var(--dark-bg-primary);
+    color: var(--dark-text-primary);
+    font-family: 'Inter', sans-serif;
+    text-align: center; /* Center content within container */
+}
+
+.download-card {
+    background-color: var(--dark-bg-secondary); /* Secondary dark background for the card */
+    padding: 3rem; /* Increased padding */
+    border-radius: 1rem; /* More rounded corners */
+    box-shadow: 0 10px 25px var(--shadow-dark); /* Deeper shadow */
+    max-width: 750px; /* <--- PERUBAHAN PENTING: CARD CONTAINER LEBIH LEBAR */
+    width: 100%; /* Memastikan card mengambil lebar penuh yang tersedia hingga max-width */
+    border: 1px solid var(--dark-border-color); /* Subtle border */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.download-card:hover {
+    transform: translateY(-5px); /* Slight lift on hover */
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6); /* Even deeper shadow on hover */
+}
+
+.download-card h2 {
+    font-size: clamp(1.8rem, 4vw, 2.5rem); /* Responsive font size */
+    color: var(--accent-white);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.download-card .title-icon {
+    color: var(--accent-purple); /* Icon color */
+    font-size: 1.2em;
+}
+
+.download-card p {
+    font-size: clamp(1em, 1.5vw, 1.1em);
+    color: var(--dark-text-secondary);
+    margin-bottom: 1rem;
+}
+
+.download-card .file-size {
+    font-weight: 600;
+    color: var(--accent-white);
+    margin-bottom: 1.5rem;
+}
+
+.file-info-detail {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 0.8rem;
+    font-size: clamp(0.95em, 1.2vw, 1.05em);
+    color: var(--dark-text-secondary);
+}
+
+.file-info-detail .info-icon {
+    color: var(--accent-purple);
+    font-size: 1.1em;
+}
+
+.file-info-detail.protected-info .info-icon {
+    color: var(--brand-red-accent); /* Red icon for protected status */
+}
+
+.password-input-group {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    width: 100%; /* Ensure input group takes full width of card */
+    display: flex;
+    justify-content: center;
+}
+
+.password-input {
+    width: 80%; /* Adjust width of the input field */
+    max-width: 350px; /* Max width for input */
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--dark-border-color);
+    border-radius: 0.5rem;
+    background-color: var(--dark-bg-tertiary); /* Darker input background */
+    color: var(--dark-text-primary);
+    font-size: 1em;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.password-input::placeholder {
+    color: var(--dark-text-secondary);
+    opacity: 0.7;
+}
+
+.password-input:focus {
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 0 3px rgba(106, 92, 205, 0.3);
+}
+
+.download-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.9rem 2.2rem;
+    border: none;
+    border-radius: 0.6rem;
+    background: linear-gradient(45deg, var(--accent-purple), #8a2be2); /* Purple gradient */
+    color: var(--accent-white);
+    cursor: pointer;
+    font-size: clamp(1em, 1.5vw, 1.1em);
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 0.6rem 2rem rgba(106, 92, 205, 0.4);
+    margin-top: 2rem;
+    letter-spacing: 0.03em;
+}
+
+.download-button:hover {
+    background: linear-gradient(45deg, var(--accent-purple-hover), #3a3285);
+    transform: translateY(-2px); /* Slight lift effect */
+    box-shadow: 0 0.9rem 2.5rem rgba(106, 92, 205, 0.6);
+}
+
+.download-error-message {
+    color: #dc3545; /* Red color for error messages */
+    margin-top: 1.5rem;
+    font-weight: 500;
+    font-size: clamp(0.9em, 1.2vw, 1em);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .download-card {
+        padding: 2.5rem;
+        max-width: 90%; /* Mengurangi max-width di layar yang lebih kecil */
+    }
+    .download-card h2 {
+        font-size: clamp(1.5rem, 5vw, 2.2rem);
+    }
+    .download-button {
+        padding: 0.8rem 1.8rem;
+        font-size: 0.95em;
+    }
+    .password-input {
+        width: 90%;
+    }
+}
+
+@media (max-width: 480px) {
+    .download-card {
+        padding: 2rem;
+        border-radius: 0.8rem;
+    }
+    .download-card h2 {
+        font-size: clamp(1.2rem, 6vw, 1.8rem);
+    }
+    .download-card p {
+        font-size: 0.9em;
+    }
+    .file-info-detail {
+        font-size: 0.85em;
+    }
+    .download-button {
+        padding: 0.7rem 1.5rem;
+        font-size: 0.9em;
+    }
+    .password-input {
+        width: 100%;
+        padding: 0.7rem 0.8rem;
+    }
+}

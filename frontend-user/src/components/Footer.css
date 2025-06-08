@@ -1,0 +1,31 @@
+/* frontend-user/src/components/Footer.css */
+
+.footer-container {
+    background-color: var(--dark-bg-primary); /* Hitam pekat, sama dengan body */
+    color: var(--dark-text-secondary);
+    padding: 1.5rem 0; /* Padding atas dan bawah */
+    text-align: center;
+    font-size: 0.9rem;
+    width: 100%;
+    
+    position: fixed; /* PENTING: Untuk menempatkan footer di bagian bawah viewport */
+    bottom: 0; /* Memposisikan di paling bawah */
+    left: 0; /* Memposisikan di paling kiri */
+    
+    transform: translateY(0); /* <--- PASTIKAN INI HANYA translateY(0) */
+    opacity: 1; /* <--- PASTIKAN INI opacity: 1 */
+    /* Baris transition DIHAPUS karena tidak ada animasi lagi */
+    /* transition: transform 0.5s ease-out, opacity 0.5s ease-out; */ 
+    z-index: 1000; /* Pastikan footer berada di atas konten lain */
+    box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.3); /* Opsional: bayangan halus di atas footer */
+}
+
+/* KELAS .visible DAN .hidden DIHAPUS KARENA TIDAK DIGUNAKAN LAGI */
+/* .footer-container.visible {
+    transform: translateY(0);
+    opacity: 1;
+} */
+/* .footer-container.hidden {
+    transform: translateY(100%);
+    opacity: 0;
+} */

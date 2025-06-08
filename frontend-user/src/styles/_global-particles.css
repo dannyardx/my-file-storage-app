@@ -1,0 +1,11 @@
+/* frontend-user/src/styles/_global-particles.css */
+.particles-background {
+    position: fixed; /* PENTING: Fixed agar mengisi seluruh viewport */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0; /* Pastikan di belakang konten */
+    pointer-events: none; /* Agar tidak mengganggu interaksi mouse */
+    background-color: transparent; /* Pastikan tidak ada background-color di sini */
+}

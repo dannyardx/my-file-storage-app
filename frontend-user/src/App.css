@@ -1,0 +1,77 @@
+/* frontend-user/src/App.css */
+
+/* .App sekarang akan mengisi lebar penuh layar, tanpa max-width */
+.App {
+    padding: 0 1.5rem; /* Padding samping untuk menjaga jarak dari tepi layar */
+    min-height: 100vh; /* Pastikan .App setidaknya setinggi viewport */
+    display: flex; /* Jadikan flex container */
+    flex-direction: column; /* Tata elemen secara vertikal */
+    position: relative; /* Untuk posisi child absolute/fixed */
+}
+
+/* Gaya untuk Peta Dunia SVG (world-map-bg) - SEKARANG BENAR-BENAR DIHAPUS */
+/*
+.world-map-bg {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120%;
+    height: 120%;
+    max-width: none;
+    max-height: none;
+    opacity: 0.03;
+    object-fit: cover;
+    filter: brightness(0.5) grayscale(100%) invert(100%);
+    z-index: -1;
+    pointer-events: none;
+    animation: mapFadeIn 2s ease-out forwards;
+}
+
+@keyframes mapFadeIn {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    to { opacity: 0.03; transform: translate(-50%, -50%) scale(1); }
+}
+*/
+
+
+/* Styling untuk area konten utama (body/isi) */
+.main-content-area {
+    flex-grow: 1; /* PENTING: Konten area mengambil sisa ruang vertikal dan mendorong footer */
+    display: flex;
+    flex-direction: column; /* PENTING: Agar children-nya (PortfolioPage) bisa meregang secara vertikal */
+    align-items: center; /* Memusatkan konten secara horizontal */
+    justify-content: center; /* Memusatkan konten secara vertikal */
+    
+    padding: 0; /* Ubah ini */
+
+    margin-top: 0; /* Pastikan tidak ada margin atas/bawah tambahan yang tidak diinginkan */
+    margin-bottom: 0;
+
+    position: relative;
+    width: 100%; /* Pastikan mengisi lebar parent (.App) */
+    z-index: 1; /* Di atas peta dan partikel */
+}
+
+/* ... sisa CSS App.css lainnya (dari balasan sebelumnya) ... */
+
+/* Responsive Adjustments untuk .App dan .main-content-area */
+@media (max-width: 768px) {
+    .App {
+        padding: 0 1rem;
+    }
+    .main-content-area {
+        padding: 0;
+    }
+    /* .world-map-bg dihapus */
+}
+
+@media (max-width: 480px) {
+    .App {
+        padding: 0 0.75rem;
+    }
+    .main-content-area {
+        padding: 0;
+    }
+    /* .world-map-bg dihapus */
+}

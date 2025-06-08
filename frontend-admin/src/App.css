@@ -1,0 +1,423 @@
+/* frontend-admin/src/App.css */
+
+/* Warna dasar untuk dark mode (LEBIH HITAM) - konsisten dengan frontend-user */
+:root {
+    --dark-bg-primary: #000000; /* HITAM PEKAT */
+    --dark-bg-secondary: #121212; /* Abu-abu sangat gelap untuk card, header, footer */
+    --dark-bg-tertiary: #1f1f1f; /* Abu-abu lebih terang untuk input, detail card */
+    --dark-text-primary: #f0f0f0; /* Warna teks utama lebih terang (mendekati putih) */
+    --dark-text-secondary: #b0b0b0; /* Warna teks sekunder/deskripsi */
+    --dark-border-color: #333333; /* Border abu-abu gelap */
+    
+    --accent-green: #00c79f; /* Bright green accent */
+    --accent-green-hover: #009e80; /* Darker green on hover */
+    --accent-purple: #6a5acd; /* Vibrant purple accent */
+    --accent-purple-hover: #4e44b5; /* Darker purple on hover */
+
+    --shadow-dark: rgba(0, 0, 0, 0.7); /* Lebih pekat untuk bayangan di atas hitam */
+    --shadow-light: rgba(0, 0, 0, 0.4); /* Lebih ringan tapi tetap terlihat */
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    font-size: 16px; /* Base font size for rem units */
+    line-height: 1.6;
+    background-color: var(--dark-bg-primary); /* Set body background */
+    overflow-x: hidden; /* Mencegah scrollbar horizontal */
+}
+
+#root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--dark-bg-primary); /* Latar belakang utama: HITAM PEKAT */
+    color: var(--dark-text-primary); /* Warna teks default */
+    width: 100%;
+    position: relative; /* Penting untuk penempatan z-index child */
+    z-index: 1; /* Konten utama di atas partikel & peta */
+}
+
+/* Gaya untuk Peta Dunia SVG (world-map-bg) - SEKARANG BENAR-BENAR DIHAPUS */
+/*
+.world-map-bg {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120%;
+    height: 120%;
+    max-width: none;
+    max-height: none;
+    opacity: 0.05;
+    object-fit: cover;
+    filter: brightness(0.5) grayscale(100%) invert(100%);
+    z-index: -2;
+    pointer-events: none;
+    animation: mapFadeIn 2s ease-out forwards;
+}
+
+@keyframes mapFadeIn {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    to { opacity: 0.05; transform: translate(-50%, -50%) scale(1); }
+}
+*/
+
+/* Gaya untuk PureCssParticles */
+.css-particles-background {
+  position: fixed; /* Menggunakan fixed agar mengisi seluruh viewport */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1; /* Di atas peta, di bawah konten utama */
+  pointer-events: none;
+  overflow: hidden;
+  background-color: transparent;
+}
+
+
+/* admin-header (banner) sudah dihapus, jadi gaya ini tidak lagi digunakan */
+/* ... */
+
+/* Gaya untuk tombol logout yang sekarang di bawah konten */
+.logout-button {
+    background-color: #dc3545; /* Merah untuk logout */
+    color: white;
+    padding: 0.8rem 1.8rem; /* Sedikit lebih besar dari tombol aksi file */
+    border: none;
+    border-radius: 8px; /* Sudut membulat */
+    cursor: pointer;
+    font-size: 1em; /* Ukuran font standar */
+    font-weight: 600;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3); /* Shadow merah */
+    
+    /* Gaya spesifik untuk posisi di bawah konten */
+    display: block; /* Agar mengambil lebar penuh parent dan bisa di-margin auto */
+    width: fit-content; /* Sesuai lebar kontennya */
+    margin: 2.5rem auto; /* Margin atas dan bawah, pusatkan horizontal */
+    text-align: center; /* Pastikan teks di dalamnya terpusat */
+}
+
+.logout-button:hover {
+    background-color: #c82333;
+    transform: translateY(-2px); /* Slight lift */
+    box-shadow: 0 6px 15px rgba(220, 53, 69, 0.5); /* Shadow lebih kuat */
+}
+
+
+.admin-content-area {
+    flex-grow: 1;
+    padding: 2.5rem;
+    max-width: 1000px;
+    margin: 2.5rem auto; /* Margin atas untuk memberi ruang dari tepi atas layar */
+    background-color: var(--dark-bg-primary);
+    width: 100%;
+    position: relative;
+    z-index: 2; /* Pastikan di atas partikel dan admin-app-container */
+}
+
+.admin-section {
+    background-color: var(--dark-bg-secondary);
+    padding: 3rem;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px var(--shadow-dark);
+    margin-bottom: 2.5rem;
+    border: 1px solid var(--dark-border-color);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.admin-section:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px var(--shadow-dark);
+}
+
+.admin-section h2 {
+    color: var(--accent-purple);
+    margin-bottom: 1.8rem;
+    font-size: clamp(1.6em, 3vw, 2.2em);
+    font-weight: 700;
+    text-align: center;
+}
+
+.upload-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.form-group {
+    margin-bottom: 0;
+}
+
+.file-input,
+.description-input {
+    width: 100%;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid var(--dark-border-color);
+    border-radius: 8px;
+    background-color: var(--dark-bg-tertiary);
+    color: var(--dark-text-primary);
+    font-size: 1em;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.file-input::placeholder,
+.description-input::placeholder {
+    color: var(--dark-text-secondary);
+    opacity: 0.7;
+}
+
+.file-input:focus,
+.description-input:focus {
+    outline: none;
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 0 3px rgba(106, 92, 205, 0.3);
+}
+
+.file-input::file-selector-button {
+    background-color: var(--accent-purple);
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.3s ease;
+    margin-right: 15px;
+}
+
+.file-input::file-selector-button:hover {
+    background-color: var(--accent-purple-hover);
+}
+
+.upload-button {
+    background: linear-gradient(45deg, var(--accent-green), var(--accent-green-hover));
+    color: white;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 199, 159, 0.3);
+    margin-top: 0.5rem;
+}
+
+.upload-button:hover {
+    background: linear-gradient(45deg, var(--accent-green-hover), #007c66);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0, 199, 159, 0.5);
+}
+
+.file-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.admin-file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--dark-bg-tertiary);
+    padding: 1.25rem 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--dark-border-color);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-file-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px var(--shadow-light);
+}
+
+.file-info {
+    flex-grow: 1;
+    margin-right: 1.5rem;
+    word-break: break-word;
+}
+
+.file-name {
+    font-weight: 600;
+    color: var(--dark-text-primary);
+    display: block;
+    font-size: 1.05em;
+    margin-bottom: 0.25rem;
+}
+
+.file-description {
+    font-size: 0.9em;
+    color: var(--dark-text-secondary);
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.file-size-date {
+    font-size: 0.85em;
+    color: var(--dark-text-secondary);
+}
+
+.file-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 0.75rem;
+}
+
+.delete-button {
+    background-color: #dc3545;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.delete-button:hover {
+    background-color: #c82333;
+    transform: translateY(-2px);
+}
+
+.share-button {
+    background-color: var(--accent-purple);
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.share-button:hover {
+    background-color: var(--accent-purple-hover);
+    transform: translateY(-2px);
+}
+
+.no-files-message {
+    text-align: center;
+    color: var(--dark-text-secondary);
+    font-style: italic;
+    padding: 1.5rem;
+    font-size: 1.1em;
+}
+
+.admin-footer {
+    background-color: var(--dark-bg-secondary);
+    color: var(--dark-text-secondary);
+    padding: 1.5rem 2rem;
+    text-align: center;
+    font-size: 0.9em;
+    box-shadow: 0 -4px 15px var(--shadow-dark);
+    margin-top: auto;
+    border-top: 1px solid var(--dark-border-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .admin-content-area {
+        padding: 2rem;
+        margin: 2rem auto;
+    }
+    .admin-section {
+        padding: 2.5rem;
+    }
+    /* .world-map-bg dihapus */
+}
+
+@media (max-width: 768px) {
+    .admin-content-area {
+        padding: 1.5rem;
+        margin: 1.5rem auto;
+    }
+    .admin-section {
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .file-input, .description-input {
+        font-size: 0.9em;
+        padding: 0.75rem 1rem;
+    }
+    .file-input::file-selector-button {
+        padding: 0.4rem 1rem;
+    }
+    .upload-button {
+        padding: 0.8rem 1.5rem;
+        font-size: 1em;
+    }
+    .admin-file-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.8rem;
+        padding: 1rem;
+    }
+    .file-info {
+        margin-right: 0;
+        width: 100%;
+    }
+    .file-actions {
+        width: 100%;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+    .delete-button, .share-button {
+        padding: 0.5rem 1rem;
+        font-size: 0.8em;
+    }
+    .admin-footer {
+        padding: 1rem 1rem;
+    }
+    .logout-button {
+        margin: 1.5rem auto;
+        padding: 0.7rem 1.5rem;
+        font-size: 0.95em;
+    }
+    /* .world-map-bg dihapus */
+}
+
+@media (max-width: 480px) {
+    .admin-content-area {
+        padding: 1rem;
+        margin: 1rem auto;
+    }
+    .admin-section {
+        padding: 1.5rem;
+    }
+    .admin-section h2 {
+        font-size: clamp(1.4em, 5vw, 2em);
+        margin-bottom: 1.2rem;
+    }
+    .upload-form {
+        gap: 1rem;
+    }
+    .file-name {
+        font-size: 0.95em;
+    }
+    .file-description {
+        font-size: 0.8em;
+    }
+    .file-size-date {
+        font-size: 0.75em;
+    }
+    .logout-button {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9em;
+    }
+}

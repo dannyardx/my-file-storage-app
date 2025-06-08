@@ -1,0 +1,19 @@
+/* frontend-admin/src/components/Footer.css */
+
+.admin-footer {
+    background-color: var(--dark-bg-secondary); /* Latar belakang footer: Abu-abu sangat gelap */
+    color: var(--dark-text-secondary);
+    padding: 1.5rem 2rem; /* Adjusted padding */
+    text-align: center;
+    font-size: 0.9em;
+    box-shadow: 0 -4px 15px var(--shadow-dark); /* Deeper shadow */
+    margin-top: auto; /* Push to bottom */
+    border-top: 1px solid var(--dark-border-color); /* Tambahan border halus */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .admin-footer {
+        padding: 1rem 1rem;
+    }
+}

@@ -1,0 +1,89 @@
+/* frontend-user/src/index.css */
+
+/* Define CSS Variables for Dark Mode */
+:root {
+    --dark-bg-primary: #000000; /* HITAM PEKAT untuk body/latar belakang paling luar */
+    --dark-bg-secondary: #121212; /* Abu-abu sangat gelap */
+    --dark-bg-tertiary: #1f1f1f; /* Abu-abu lebih terang */
+    --dark-text-primary: #f0f0f0; /* Warna teks utama lebih terang (mendekati putih) */
+    --dark-text-secondary: #b0b0b0; /* Warna teks sekunder/deskripsi */
+    --dark-border-color: #333333; /* Border abu-abu gelap */
+    
+    --accent-white: #FFFFFF; /* Aksen putih untuk tombol/ikon */
+    --accent-white-hover: #E0E0E0; /* Warna putih sedikit gelap untuk hover */
+
+    --brand-red-accent: #FF4500; /* AKESEN MERAH UNTUK TEKS "PIRATED FILE" */
+    --brand-red-accent-hover: #E63900; /* Merah lebih gelap untuk hover */
+
+    --accent-purple: #6a5acd; /* Vibrant purple accent */
+    --accent-purple-hover: #4e44b5; /* Darker purple on hover */
+
+    --accent-green: #28a745; /* Tambahan untuk notifikasi sukses */
+    --accent-green-hover: #218838; /* Tambahan untuk notifikasi sukses */
+
+    --shadow-dark: rgba(0, 0, 0, 0.7); /* Bayangan gelap */
+    --shadow-light: rgba(0, 0, 0, 0.4); /* Bayangan sedikit terang */
+}
+
+html {
+  height: 100%;
+  box-sizing: border-box; /* Pastikan padding dan border termasuk dalam total lebar/tinggi */
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', 'Poppins', sans-serif; /* Prioritas Poppins, fallback Inter */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+
+  background-color: var(--dark-bg-primary); /* Latar belakang body adalah HITAM PEKAT */
+  color: var(--dark-text-primary); /* Warna teks default */
+  
+  min-height: 100vh; /* PENTING: body harus mengambil tinggi penuh viewport */
+  display: flex; /* Jadikan body flex container */
+  flex-direction: column; /* Tata elemen di dalam body secara vertikal */
+  
+  overflow: hidden; /* <--- INI UNTUK MEMBUAT HALAMAN TIDAK BISA DI-SCROLL */
+}
+
+code {
+  font-family: 'Fira Code', monospace;
+}
+
+/* Penyesuaian Font Size Global untuk Responsif */
+@media (max-width: 768px) {
+  html {
+    font-size: clamp(13px, 1.8vw, 15px);
+  }
+}
+@media (max-width: 480px) {
+  html {
+    font-size: clamp(12px, 2.5vw, 14px);
+  }
+}
+
+/* Custom Scrollbar Styles for Dark Theme */
+::-webkit-scrollbar {
+    width: 10px; /* Width of the scrollbar */
+}
+
+::-webkit-scrollbar-track {
+    background: var(--dark-bg-secondary); /* Background of the scrollbar track */
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--accent-white); /* Color of the scrollbar thumb - SEKARANG PUTIH */
+    border-radius: 5px; /* Rounded corners for the thumb */
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-white-hover); /* Color of the scrollbar thumb on hover - SEKARANG PUTIH */
+}
+
+/* Untuk Firefox */
+* {
+  scrollbar-width: thin; /* "auto" (default), "thin", "none" */
+  scrollbar-color: var(--accent-white) var(--dark-bg-secondary); /* thumb color track color - SEKARANG PUTIH */
+}
