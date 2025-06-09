@@ -2,10 +2,10 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs'); // Pastikan 'fs' diimpor jika digunakan
 const cors = require('cors');
 // MIGRATION AWS SDK v2 ke v3
-// const AWS = require('aws-sdk'); // Hapus atau komentari ini jika tidak ada dependensi lain
+// const AWS = require('aws-sdk'); // Baris ini harus dikomentari atau dihapus
 const { S3Client, ListObjectsV2Command, HeadObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const { Upload } = require('@aws-sdk/lib-storage');
 
@@ -35,29 +35,14 @@ const s3Client = new S3Client({
 // =====================================================================
 // MIDDLEWARE CORS
 // PENTING: Untuk PRODUKSI, ganti 'origin: "*"' dengan domain frontend Anda
-// Contoh untuk produksi:
-// const allowedOrigins = ['https://your-frontend-domain.com', 'http://localhost:3000'];
-// app.use(cors({
-//     origin: function (origin, callback) {
-//         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-//             callback(null, true);
-//         } else {
-//             callback(new Error('Not allowed by CORS'));
-//         }
-//     },
-//     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-//     allowedHeaders: ['Content-Type', 'Authorization'],
-//     credentials: true
-// }));
-// app.options('*', cors());
 // =====================================================================
 app.use(cors({
-    origin: '*',
+    origin: '*', // Izinkan semua origin untuk permintaan utama (HANYA UNTUK DEVELOPMENT/DEMO)
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization'], // Termasuk header Authorization
     credentials: true
 }));
-app.options('*', cors());
+app.options('*', cors()); // Mengatur respons preflight untuk semua rute
 
 app.use(express.json());
 
@@ -88,7 +73,7 @@ app.get('/api/files', async (req, res) => {
         const command = new ListObjectsV2Command({
             Bucket: S3_BUCKET_NAME
         });
-        const data = await s3Client.send(command); // Menggunakan s3Client.send(command) untuk SDK v3
+        const data = await s3Client.send(command);
 
         const fileList = data.Contents.filter(item => {
             const ext = path.extname(item.Key).toLowerCase();
@@ -126,7 +111,7 @@ app.get('/api/files/info/:fileName', async (req, res) => {
             Bucket: S3_BUCKET_NAME,
             Key: serverFileName
         });
-        const data = await s3Client.send(command); // Menggunakan s3Client.send(command) untuk SDK v3
+        const data = await s3Client.send(command);
 
         const parts = serverFileName.split('-');
         let originalName = serverFileName;
@@ -140,12 +125,12 @@ app.get('/api/files/info/:fileName', async (req, res) => {
             description: `File ${path.extname(originalName).substring(1).toUpperCase()}`,
             fileSize: data.ContentLength,
             uploadDate: data.LastModified.toISOString(),
-            isProtected: false // Asumsi file publik tidak dilindungi.
+            isProtected: false
         };
         console.log("[BACKEND-INFO] File info sent from S3:", fileInfo);
         res.json(fileInfo);
     } catch (error) {
-        if (error.Code === 'NotFound') { // Perubahan: SDK v3 menggunakan error.Code
+        if (error.Code === 'NotFound') { // SDK v3 menggunakan error.Code
             console.log(`[BACKEND-INFO] File not found in S3: ${serverFileName}`);
             return res.status(404).json({ message: 'File tidak ditemukan di S3.' });
         }
@@ -154,11 +139,11 @@ app.get('/api/files/info/:fileName', async (req, res) => {
     }
 });
 
-app.get('/api/files/download/:fileName', async (req, res) => { // Tambahkan async di sini
+app.get('/api/files/download/:fileName', async (req, res) => {
     const serverFileName = req.params.fileName;
     console.log(`[BACKEND-DOWNLOAD] Download request received for: ${serverFileName}`);
 
-    const command = new GetObjectCommand({ // Menggunakan GetObjectCommand untuk SDK v3
+    const command = new GetObjectCommand({
         Bucket: S3_BUCKET_NAME,
         Key: serverFileName
     });
@@ -172,8 +157,8 @@ app.get('/api/files/download/:fileName', async (req, res) => { // Tambahkan asyn
     res.attachment(originalName);
 
     try {
-        const response = await s3Client.send(command); // Menggunakan s3Client.send(command) untuk SDK v3
-        response.Body.pipe(res); // Mengalirkan Body dari S3 langsung ke respons
+        const response = await s3Client.send(command);
+        response.Body.pipe(res);
         console.log(`[BACKEND-DOWNLOAD] Initiated stream for file ${originalName} from S3.`);
     } catch (err) {
         console.error(`[BACKEND-DOWNLOAD] Error streaming file from S3: ${serverFileName}`, err);
@@ -213,20 +198,19 @@ app.post('/api/admin/upload', authenticateToken, upload.single('file'), async (r
     const serverFileName = `${Date.now()}-${originalName}`;
     const description = req.body.description || `File ${path.extname(originalName).substring(1).toUpperCase()}`;
 
-    // Menggunakan Upload dari @aws-sdk/lib-storage untuk upload yang lebih mudah
     const uploader = new Upload({
-        client: s3Client, // Menggunakan s3Client (SDK v3)
+        client: s3Client,
         params: {
             Bucket: S3_BUCKET_NAME,
             Key: serverFileName,
             Body: req.file.buffer,
             ContentType: req.file.mimetype,
-            ACL: 'private' // atau 'public-read' jika memang ingin publik
+            ACL: 'private'
         },
     });
 
     try {
-        const data = await uploader.done(); // Menggunakan uploader.done()
+        const data = await uploader.done();
         console.log(`[BACKEND] File uploaded to S3: ${data.Location}`);
         res.status(200).json({
             message: 'File berhasil diunggah ke S3!',
@@ -249,7 +233,7 @@ app.get('/api/admin/files', authenticateToken, async (req, res) => {
         const command = new ListObjectsV2Command({
             Bucket: S3_BUCKET_NAME
         });
-        const data = await s3Client.send(command); // Menggunakan s3Client.send(command) untuk SDK v3
+        const data = await s3Client.send(command);
 
         const fileList = data.Contents.filter(item => {
             const ext = path.extname(item.Key).toLowerCase();
@@ -282,17 +266,17 @@ app.delete('/api/admin/files/:fileName', authenticateToken, async (req, res) => 
     const serverFileName = req.params.fileName;
     console.log(`[BACKEND] Admin delete request for S3 file: ${serverFileName}`);
 
-    const command = new DeleteObjectCommand({ // Menggunakan DeleteObjectCommand untuk SDK v3
+    const command = new DeleteObjectCommand({
         Bucket: S3_BUCKET_NAME,
         Key: serverFileName
     });
 
     try {
-        await s3Client.send(command); // Menggunakan s3Client.send(command) untuk SDK v3
+        await s3Client.send(command);
         console.log(`[BACKEND] File ${serverFileName} successfully deleted from S3.`);
         res.status(200).json({ message: 'File berhasil dihapus dari S3!' });
     } catch (error) {
-        if (error.Code === 'NoSuchKey') { // Perubahan: SDK v3 menggunakan error.Code
+        if (error.Code === 'NoSuchKey') { // SDK v3 menggunakan error.Code
             console.log(`[BACKEND] File not found in S3 for deletion: ${serverFileName}`);
             return res.status(404).json({ message: 'File tidak ditemukan di S3.' });
         }
