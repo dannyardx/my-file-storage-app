@@ -7,20 +7,19 @@ import { FaDownload, FaInfoCircle, FaFileAlt, FaLock, FaCalendarAlt } from 'reac
 import './DownloadPage.css';
 
 // BACKEND_URL sekarang diambil sebagai prop dari App.js
+// BACKEND_URL akan berisi '/api' (untuk production Netlify)
+// atau 'http://localhost:8888/api' (untuk development lokal Netlify Dev)
 const DownloadPage = ({ BACKEND_URL }) => {
     const { fileName } = useParams();
     const [fileInfo, setFileInfo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [password, setPassword] = useState('');
-    // setShowPasswordInput dan showPasswordInput state dihilangkan karena tidak digunakan
 
-    // showNotification diubah menjadi hanya log ke konsol
     const showNotification = useCallback((msg, type) => {
         console.log(`[Notification Suppressed] Type: ${type}, Message: ${msg}`);
     }, []);
 
-    // Efek untuk mencegah context menu (klik kanan) di DownloadPage
     useEffect(() => {
         const handleContextMenu = (event) => {
             event.preventDefault();
@@ -36,7 +35,9 @@ const DownloadPage = ({ BACKEND_URL }) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(`${BACKEND_URL}/api/files/info/${fileName}`);
+            // PERBAIKAN PENTING:
+            // Gunakan `${BACKEND_URL}/files/info/${fileName}` BUKAN `${BACKEND_URL}/api/files/info/${fileName}`.
+            const response = await fetch(`${BACKEND_URL}/files/info/${fileName}`);
             if (!response.ok) {
                 if (response.status === 404) {
                     setError('File tidak ditemukan.');
@@ -51,8 +52,6 @@ const DownloadPage = ({ BACKEND_URL }) => {
             }
             const data = await response.json();
             setFileInfo(data);
-            // isProtected: Asumsi file publik tidak dilindungi. Jika ada fitur ini,
-            // properti `isProtected` harus datang dari metadata S3 atau database.
         } catch (err) {
             setError('Tidak dapat terhubung ke server.');
             showNotification('Tidak dapat terhubung ke server.', 'error');
@@ -68,16 +67,18 @@ const DownloadPage = ({ BACKEND_URL }) => {
     const handleDownload = async () => {
         if (!fileInfo) return;
 
-        let downloadUrl = `${BACKEND_URL}/api/files/download/${fileName}`;
+        // PERBAIKAN PENTING:
+        // Gunakan `${BACKEND_URL}/files/download/${fileName}` BUKAN `${BACKEND_URL}/api/files/download/${fileName}`.
+        let downloadUrl = `${BACKEND_URL}/files/download/${fileName}`;
+        
         // Fitur download file terlindungi password belum didukung sepenuhnya di demo ini.
-        // Jika fileInfo.isProtected true, logikanya perlu ditambahkan di backend.
-        if (fileInfo.isProtected) { // Asumsi isProtected datang dari backend
+        if (fileInfo.isProtected) {
             showNotification('Fitur unduh file terlindungi password belum didukung sepenuhnya di demo ini.', 'info');
-            return; // Hentikan proses unduh jika password dibutuhkan tapi fitur belum siap
+            return;
         }
 
         try {
-            const response = await fetch(downloadUrl); // Method GET default jika tidak ada body/headers khusus
+            const response = await fetch(downloadUrl);
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ message: 'Terjadi kesalahan tidak dikenal.' }));
                 if (response.status === 404) {
@@ -156,7 +157,6 @@ const DownloadPage = ({ BACKEND_URL }) => {
                     </div>
                 )}
 
-                {/* isProtected perlu didapatkan dari backend, saat ini belum diimplementasikan */}
                 {fileInfo.isProtected && (
                     <div className="file-info-detail protected-info">
                         <FaLock className="info-icon" />
@@ -164,7 +164,6 @@ const DownloadPage = ({ BACKEND_URL }) => {
                     </div>
                 )}
 
-                {/* Input password hanya akan muncul jika isProtected benar-benar diaktifkan dari backend */}
                 {fileInfo.isProtected && (
                     <div className="password-input-group">
                         <input

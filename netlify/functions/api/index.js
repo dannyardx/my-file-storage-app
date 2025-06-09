@@ -1,3 +1,4 @@
+// my-modern-file-storage/netlify/functions/api/index.js
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
@@ -6,7 +7,7 @@ const cors = require('cors');
 const { S3Client, ListObjectsV2Command, HeadObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const { Upload } = require('@aws-sdk/lib-storage');
 
-const { verifyAdminCredentials, authenticateToken } = require('./auth'); // Path disesuaikan karena auth.js ada di parent
+const { verifyAdminCredentials, authenticateToken } = require('./auth'); // Path relatif ke auth.js
 
 const app = express();
 
@@ -27,9 +28,9 @@ const s3Client = new S3Client({
 });
 
 // =====================================================================
-// MIDDLEWARE CORS - PENTING UNTUK VERCEL
+// MIDDLEWARE CORS
 // =====================================================================
-const FRONTEND_ORIGIN_PROD = process.env.FRONTEND_USER_URL_PROD; // Ini akan dibaca dari ENV Vercel
+const FRONTEND_ORIGIN_PROD = process.env.FRONTEND_USER_URL_PROD;
 const FRONTEND_ORIGIN_DEV = 'http://localhost:3000';
 
 const corsOptions = {
@@ -51,7 +52,7 @@ app.options('*', cors(corsOptions));
 
 app.use(express.json());
 
-// Konfigurasi Multer (sama seperti sebelumnya)
+// Konfigurasi Multer
 const upload = multer({
     storage: multer.memoryStorage(),
     fileFilter: (req, file, cb) => {
@@ -69,15 +70,18 @@ const upload = multer({
 });
 
 // ===========================================
-// ROUTES API (sama seperti sebelumnya)
+// ROUTES UNTUK PENGGUNA (PUBLIC)
+// PERBAIKAN PENTING: Hapus prefix '/api' dari definisi rute Express
 // ===========================================
-// ... (Semua rute app.get, app.post, app.delete Anda akan ada di sini) ...
 
-app.get('/api/files', async (req, res) => {
-    // ... kode rute /api/files (public list) ...
+app.get('/files', async (req, res) => { // Dulu '/api/files', sekarang '/files'
+    console.log("[BACKEND] Request received for /files (public list)");
     try {
-        const command = new ListObjectsV2Command({ Bucket: S3_BUCKET_NAME });
+        const command = new ListObjectsV2Command({
+            Bucket: S3_BUCKET_NAME
+        });
         const data = await s3Client.send(command);
+
         const fileList = (data.Contents || []).filter(item => {
             const ext = path.extname(item.Key).toLowerCase();
             return ext === '.zip' || ext === '.rar';
@@ -105,17 +109,23 @@ app.get('/api/files', async (req, res) => {
     }
 });
 
-app.get('/api/files/info/:fileName', async (req, res) => {
-    // ... kode rute /api/files/info/:fileName ...
+app.get('/files/info/:fileName', async (req, res) => { // Dulu '/api/files/info/:fileName', sekarang '/files/info/:fileName'
     const serverFileName = req.params.fileName;
+    console.log(`[BACKEND-INFO] Request received for file info from S3: ${serverFileName}`);
+
     try {
-        const command = new HeadObjectCommand({ Bucket: S3_BUCKET_NAME, Key: serverFileName });
+        const command = new HeadObjectCommand({
+            Bucket: S3_BUCKET_NAME,
+            Key: serverFileName
+        });
         const data = await s3Client.send(command);
+
         const parts = serverFileName.split('-');
         let originalName = serverFileName;
         if (parts.length > 1 && !isNaN(Number(parts[0])) && String(Number(parts[0])) === parts[0]) {
             originalName = parts.slice(1).join('-');
         }
+
         const fileInfo = {
             originalFileName: originalName,
             serverFileName: serverFileName,
@@ -128,6 +138,7 @@ app.get('/api/files/info/:fileName', async (req, res) => {
         res.json(fileInfo);
     } catch (error) {
         if (error.Code === 'NotFound') {
+            console.log(`[BACKEND-INFO] File not found in S3: ${serverFileName}`);
             return res.status(404).json({ message: 'File tidak ditemukan di S3.' });
         }
         console.error(`[BACKEND-INFO] Error getting file info from S3 for ${serverFileName}:`, error);
@@ -135,34 +146,48 @@ app.get('/api/files/info/:fileName', async (req, res) => {
     }
 });
 
-app.get('/api/files/download/:fileName', async (req, res) => {
-    // ... kode rute /api/files/download/:fileName ...
+app.get('/files/download/:fileName', async (req, res) => { // Dulu '/api/files/download/:fileName', sekarang '/files/download/:fileName'
     const serverFileName = req.params.fileName;
-    const command = new GetObjectCommand({ Bucket: S3_BUCKET_NAME, Key: serverFileName });
+    console.log(`[BACKEND-DOWNLOAD] Download request received for: ${serverFileName}`);
+
+    const command = new GetObjectCommand({
+        Bucket: S3_BUCKET_NAME,
+        Key: serverFileName
+    });
+
     const parts = serverFileName.split('-');
     let originalName = serverFileName;
     if (parts.length > 1 && !isNaN(Number(parts[0])) && String(Number(parts[0])) === parts[0]) {
         originalName = parts.slice(1).join('-');
     }
+
     res.attachment(originalName);
+
     try {
         const response = await s3Client.send(command);
         response.Body.pipe(res);
+        console.log(`[BACKEND-DOWNLOAD] Initiated stream for file ${originalName} from S3.`);
     } catch (err) {
+        console.error(`[BACKEND-DOWNLOAD] Error streaming file from S3: ${serverFileName}`, err);
         if (err.Code === 'NoSuchKey') {
             return res.status(404).json({ message: 'File tidak ditemukan di S3.' });
         }
-        console.error(`[BACKEND-DOWNLOAD] Error streaming file from S3: ${serverFileName}`, err);
         if (!res.headersSent) {
             res.status(500).json({ message: 'Gagal mengunduh file dari S3.' });
         }
     }
 });
 
-app.post('/api/admin/login', (req, res) => {
-    // ... kode rute /api/admin/login ...
+
+// ===========================================
+// ROUTES UNTUK ADMIN
+// PERBAIKAN PENTING: Hapus prefix '/api' dari definisi rute Express
+// ===========================================
+
+app.post('/admin/login', (req, res) => { // Dulu '/api/admin/login', sekarang '/admin/login'
     const { password } = req.body;
     const { success, token, message } = verifyAdminCredentials(password);
+
     if (success) {
         res.json({ message: 'Login berhasil!', token: token });
     } else {
@@ -170,23 +195,38 @@ app.post('/api/admin/login', (req, res) => {
     }
 });
 
-app.post('/api/admin/upload', authenticateToken, upload.single('file'), async (req, res) => {
-    // ... kode rute /api/admin/upload ...
+app.post('/admin/upload', authenticateToken, upload.single('file'), async (req, res) => { // Dulu '/api/admin/upload', sekarang '/admin/upload'
+    console.log("[BACKEND] Admin upload request received.");
+    if (!req.file) {
+        console.log("[BACKEND] No file uploaded.");
+        return res.status(400).json({ message: 'Tidak ada file yang diunggah.' });
+    }
+
     const originalName = req.file.originalname;
-    const serverFileName = `<span class="math-inline">\{Date\.now\(\)\}\-</span>{originalName}`;
+    const serverFileName = `${Date.now()}-${originalName}`;
     const description = req.body.description || `File ${path.extname(originalName).substring(1).toUpperCase()}`;
+
     const uploader = new Upload({
         client: s3Client,
         params: {
-            Bucket: S3_BUCKET_NAME, Key: serverFileName, Body: req.file.buffer,
-            ContentType: req.file.mimetype, ACL: 'private'
+            Bucket: S3_BUCKET_NAME,
+            Key: serverFileName,
+            Body: req.file.buffer,
+            ContentType: req.file.mimetype,
+            ACL: 'private'
         },
     });
+
     try {
         const data = await uploader.done();
+        console.log(`[BACKEND] File uploaded to S3: ${data.Location}`);
         res.status(200).json({
-            message: 'File berhasil diunggah ke S3!', fileName: originalName, serverFileName: serverFileName,
-            description: description, fileSize: req.file.size, uploadDate: new Date().toISOString(),
+            message: 'File berhasil diunggah ke S3!',
+            fileName: originalName,
+            serverFileName: serverFileName,
+            description: description,
+            fileSize: req.file.size,
+            uploadDate: new Date().toISOString(),
             s3Location: data.Location
         });
     } catch (error) {
@@ -195,11 +235,14 @@ app.post('/api/admin/upload', authenticateToken, upload.single('file'), async (r
     }
 });
 
-app.get('/api/admin/files', authenticateToken, async (req, res) => {
-    // ... kode rute /api/admin/files ...
+app.get('/admin/files', authenticateToken, async (req, res) => { // Dulu '/api/admin/files', sekarang '/admin/files'
+    console.log("[BACKEND] Admin files list request received.");
     try {
-        const command = new ListObjectsV2Command({ Bucket: S3_BUCKET_NAME });
+        const command = new ListObjectsV2Command({
+            Bucket: S3_BUCKET_NAME
+        });
         const data = await s3Client.send(command);
+
         const fileList = (data.Contents || []).filter(item => {
             const ext = path.extname(item.Key).toLowerCase();
             return ext === '.zip' || ext === '.rar';
@@ -211,11 +254,15 @@ app.get('/api/admin/files', authenticateToken, async (req, res) => {
                 originalName = parts.slice(1).join('-');
             }
             return {
-                id: serverFileName, name: originalName, serverFileName: serverFileName,
+                id: serverFileName,
+                name: originalName,
+                serverFileName: serverFileName,
                 description: `File ${path.extname(originalName).substring(1).toUpperCase()}`,
-                fileSize: item.Size, uploadDate: item.LastModified.toISOString()
+                fileSize: item.Size,
+                uploadDate: item.LastModified.toISOString()
             };
         });
+        console.log(`[BACKEND] Found ${fileList.length} files from S3 for admin list.`);
         res.json(fileList);
     } catch (error) {
         console.error("[BACKEND] Error listing files from S3 for admin:", error);
@@ -223,15 +270,22 @@ app.get('/api/admin/files', authenticateToken, async (req, res) => {
     }
 });
 
-app.delete('/api/admin/files/:fileName', authenticateToken, async (req, res) => {
-    // ... kode rute /api/admin/files/:fileName ...
+app.delete('/admin/files/:fileName', authenticateToken, async (req, res) => { // Dulu '/api/admin/files/:fileName', sekarang '/admin/files/:fileName'
     const serverFileName = req.params.fileName;
-    const command = new DeleteObjectCommand({ Bucket: S3_BUCKET_NAME, Key: serverFileName });
+    console.log(`[BACKEND] Admin delete request for S3 file: ${serverFileName}`);
+
+    const command = new DeleteObjectCommand({
+        Bucket: S3_BUCKET_NAME,
+        Key: serverFileName
+    });
+
     try {
         await s3Client.send(command);
+        console.log(`[BACKEND] File ${serverFileName} successfully deleted from S3.`);
         res.status(200).json({ message: 'File berhasil dihapus dari S3!' });
     } catch (error) {
         if (error.Code === 'NoSuchKey') {
+            console.log(`[BACKEND] File not found in S3 for deletion: ${serverFileName}`);
             return res.status(404).json({ message: 'File tidak ditemukan di S3.' });
         }
         console.error(`[BACKEND] Error deleting file from S3: ${serverFileName}`, error);
