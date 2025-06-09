@@ -1,0 +1,20 @@
+[build]
+  publish = "frontend-user/build" # Direktori output build React Anda
+  functions = "netlify/functions"  # Direktori tempat fungsi Anda berada
+
+[functions]
+  node_bundler = "esbuild" # Bundler yang lebih cepat untuk fungsi Node.js
+  # Batasan memori dan waktu eksekusi untuk fungsi Anda
+  # memory = 1024 # MB (default: 1024 MB)
+  # timeout = 30 # detik (default: 10 detik, max: 26 detik di paket gratis)
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat" # Redirect permintaan /api ke fungsi Anda
+  status = 200 # Pastikan ini adalah status 200 agar permintaan diteruskan tanpa redirect browser
+  force = true # Memaksa redirect ini
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
