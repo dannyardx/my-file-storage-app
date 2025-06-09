@@ -21,3 +21,5 @@ Thumbs.db
 
 # Uploads (untuk backend)
 backend/uploads/
+# Local Netlify folder
+.netlify
