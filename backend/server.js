@@ -1,15 +1,15 @@
 // backend/server.js
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const path = require('path'); // KOREKSI: Impor 'path' dengan benar
+const fs = require('fs');     // KOREKSI: Impor 'fs' dengan benar
 const cors = require('cors');
 
 const app = express();
 const port = process.env.PORT || 5000;
 
 // =====================================================================
-// MIDDLEWARE CORS AGRESIIF UNTUK DEBUGGING - IZINKAN SEMUA ORIGIN (*)
+// MIDDLEWARE CORS AGRESIIF UNTUK PRODUKSI - IZINKAN SEMUA ORIGIN (*)
 // =====================================================================
 app.options('*', cors({
     origin: '*', // Izinkan semua origin untuk preflight
@@ -41,7 +41,7 @@ const storage = multer.diskStorage({
     },
     filename: (req, file, cb) => {
         const originalName = file.originalname;
-        const fileName = `${Date.now()}-${originalName}`;
+        const fileName = `<span class="math-inline">\{Date\.now\(\)\}\-</span>{originalName}`;
         console.log(`[BACKEND-UPLOAD] Storing file: ${originalName} as ${fileName}`);
         cb(null, fileName);
     }
@@ -172,7 +172,7 @@ app.get('/api/files/download/:fileName', (req, res) => {
                     }
                 }
             } else {
-                console.log(`[BACKEND-DOWNLOAD] File ${originalName} (${serverFileName}) successfully downloaded.`);
+                console.log(`[BACKEND-DOWNLOAD] File <span class="math-inline">\{originalName\} \(</span>{serverFileName}) successfully downloaded.`);
             }
         });
     } else {
