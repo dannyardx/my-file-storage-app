@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-// Gaya umum App.css user dan AdminPage.css spesifik untuk halaman ini
-import '../../App.css'; 
-import './AdminPage.css'; 
+// Gaya umum App.css user
+import '../../App.css';
+// Gaya spesifik AdminPage.css (mengandung gaya admin-app-container, admin-section, dll.)
+import './AdminPage.css';
 
 // Import komponen admin-specific
-import ConfirmationModal from '../../components/admin-components/ConfirmationModal'; 
-import Login from './Login'; 
+import ConfirmationModal from '../../components/admin-components/ConfirmationModal';
+import Login from './Login';
 
 function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai props dari App.js
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -16,18 +17,18 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
   const [newFile, setNewFile] = useState(null);
   const [newFileDescription, setNewFileDescription] = '';
   const [message, setMessage] = useState('Memuat daftar file...'); // Pesan untuk daftar file
-  
-  // eslint-disable-next-line no-empty-pattern
-  const [] = useState({ message: '', type: '' }); // Untuk notifikasi sementara (console.log)
 
   // --- STATE UNTUK MODAL KONFIRMASI ---
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [fileToDeleteName, setFileToDeleteName] = useState(''); // Untuk menyimpan nama file yang akan dihapus
   // ------------------------------------------
 
+  // Tidak ada komponen Notification di sini, hanya console.log()
+  // const [notification, setNotification] = useState({ message: '', type: '' });
+
   // ADMIN_SECRET_TOKEN di frontend (untuk demo). Di produksi, ini harus diamankan atau dibaca dari backend.
-  const ADMIN_SECRET_TOKEN = 'ADMIN123'; 
-  
+  const ADMIN_SECRET_TOKEN = 'ADMIN123';
+
   // showNotification diubah menjadi hanya log ke konsol, karena kita tidak pakai komponen notifikasi UI
   const showNotification = useCallback((msg, type) => {
     console.log(`[Admin Info] Type: ${type}, Message: ${msg}`);
@@ -50,7 +51,7 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
             return;
         }
         // Jika respons bukan OK, coba baca pesan error dari body JSON
-        const errorData = await response.json().catch(() => ({ message: 'Terjadi kesalahan tidak dikenal.' }));
+        const errorData = await response.json().catch(() => ({ message: 'Terjadi kesalahan tidak dikenal atau bukan JSON.' }));
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
@@ -101,7 +102,7 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Terjadi kesalahan tidak dikenal.' }));
+        const errorData = await response.json().catch(() => ({ message: 'Terjadi kesalahan tidak dikenal atau bukan JSON.' }));
         if (response.status === 403) {
             localStorage.removeItem('adminToken');
             setIsLoggedIn(false);
@@ -142,7 +143,7 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Terjadi kesalahan tidak dikenal.' }));
+        const errorData = await response.json().catch(() => ({ message: 'Terjadi kesalahan tidak dikenal atau bukan JSON.' }));
         if (response.status === 403) {
             localStorage.removeItem('adminToken');
             setIsLoggedIn(false);
@@ -223,7 +224,8 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
       </header>
 
       <main className="admin-content-area">
-        {/* Tidak ada komponen Notification di sini, hanya console.log */}
+        {/* Notifikasi (jika diaktifkan) */}
+        {/* <Notification message={notification.message} type={notification.type} onClose={() => setNotification({ message: '', type: '' })} /> */}
 
         {/* Unggah File Baru */}
         <motion.section
