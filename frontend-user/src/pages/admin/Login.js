@@ -4,9 +4,6 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import './Login.css';
 
-// Menerima BACKEND_URL sebagai prop dari App.js
-// BACKEND_URL akan berisi '/api' (untuk production Netlify)
-// atau 'http://localhost:8888/api' (untuk development lokal Netlify Dev)
 function Login({ onLoginSuccess, BACKEND_URL }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -18,12 +15,8 @@ function Login({ onLoginSuccess, BACKEND_URL }) {
     try {
         // Panggilan API ke backend:
         // BACKEND_URL sudah disetel ke '/api' (dari .env).
-        // Fungsi Express di backend (netlify/functions/api/index.js) sekarang
-        // mendefinisikan rute seperti app.post('/admin/login', ...).
+        // Fungsi Express di backend sekarang mendefinisikan rute seperti app.post('/admin/login', ...).
         // Jadi, URL yang tepat adalah `${BACKEND_URL}/admin/login`.
-        // Ini akan menghasilkan '/api/admin/login' di frontend.
-        // Netlify.toml akan menerjemahkan ini ke '/.netlify/functions/api/admin/login'.
-        // Dan fungsi Express akan merespons rute '/admin/login'.
         const response = await fetch(`${BACKEND_URL}/admin/login`, {
             method: 'POST',
             headers: {

@@ -32,10 +32,6 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
     }
 
     try {
-      // Panggilan API ke backend:
-      // BACKEND_URL sudah disetel ke '/api' (dari .env).
-      // Fungsi Express di backend sekarang mendefinisikan rute seperti app.get('/admin/files', ...).
-      // Jadi, URL yang tepat adalah `${BACKEND_URL}/admin/files`.
       const response = await fetch(`${BACKEND_URL}/admin/files`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -94,8 +90,6 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
     formData.append('description', newFileDescription);
 
     try {
-      // Panggilan API ke backend:
-      // Gunakan `${BACKEND_URL}/admin/upload`.
       const response = await fetch(`${BACKEND_URL}/admin/upload`, {
         method: 'POST',
         headers: {
@@ -143,8 +137,6 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
     }
 
     try {
-      // Panggilan API ke backend:
-      // Gunakan `${BACKEND_URL}/admin/files/${fileToDeleteName}`.
       const response = await fetch(`${BACKEND_URL}/admin/files/${fileToDeleteName}`, {
         method: 'DELETE',
         headers: {
@@ -179,8 +171,6 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
   };
 
   const handleShareClick = async (serverFileName) => {
-    // URL publik untuk user, tidak perlu melalui /api
-    // FRONTEND_USER_URL sudah 'https://thisismine.my.id' (dari .env)
     const shareLink = `${FRONTEND_USER_URL}/download/${serverFileName}`;
     try {
       await navigator.clipboard.writeText(shareLink);

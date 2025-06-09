@@ -48,9 +48,9 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.options('*', cors(corsOptions)); // Penting untuk preflight requests
 
-app.use(express.json());
+app.use(express.json()); // Middleware untuk mengurai JSON body
 
 // Konfigurasi Multer
 const upload = multer({
@@ -71,9 +71,6 @@ const upload = multer({
 
 // ===========================================
 // ROUTES UNTUK PENGGUNA (PUBLIC)
-// Perbaikan: Pastikan rute Express Anda sesuai dengan yang diterima setelah Netlify rewrite.
-// Netlify.toml mengarahkan /api/* ke fungsi ini. Jadi, rute di sini adalah sisa dari path.
-// Contoh: Jika request /api/files, fungsi menerima /files.
 // ===========================================
 
 app.get('/files', async (req, res) => {
@@ -183,10 +180,10 @@ app.get('/files/download/:fileName', async (req, res) => {
 
 // ===========================================
 // ROUTES UNTUK ADMIN
-// PERBAIKAN: Hapus prefix '/api' dari definisi rute Express
 // ===========================================
 
 app.post('/admin/login', (req, res) => {
+    console.log("[BACKEND] Admin login request received");
     const { password } = req.body;
     const { success, token, message } = verifyAdminCredentials(password);
 
@@ -276,7 +273,7 @@ app.delete('/admin/files/:fileName', authenticateToken, async (req, res) => {
     const serverFileName = req.params.fileName;
     console.log(`[BACKEND] Admin delete request for S3 file: ${serverFileName}`);
 
-    const command = new DeleteObjectCommand({
+    const command = new DeleteObjectV2Command({
         Bucket: S3_BUCKET_NAME,
         Key: serverFileName
     });
@@ -295,6 +292,11 @@ app.delete('/admin/files/:fileName', authenticateToken, async (req, res) => {
     }
 });
 
-// Vercel tidak membutuhkan app.listen().
-// Sebagai gantinya, Anda mengekspor instance 'app' dari Express.
+// Penting: tambahkan middleware penanganan error dasar di akhir
+app.use((err, req, res, next) => {
+    console.error("Caught unhandled error:", err.stack);
+    res.status(err.statusCode || 500).json({ message: err.message || 'Terjadi kesalahan internal server.' });
+});
+
+// Ekspos aplikasi Express sebagai fungsi serverless
 module.exports = app;
