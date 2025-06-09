@@ -1,22 +1,25 @@
 // frontend-user/src/pages/admin/Login.js
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import './Login.css';
 
-// Menerima BACKEND_URL sebagai prop
+// Menerima BACKEND_URL sebagai prop dari App.js
+// BACKEND_URL akan berisi '/api' (untuk production Netlify)
+// atau 'http://localhost:8888/api' (untuk development lokal Netlify Dev)
 function Login({ onLoginSuccess, BACKEND_URL }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-
-  // Kredensial tidak lagi di-hardcode di frontend.
-  // Frontend akan mengirim password ke backend untuk validasi.
-  // Backend akan mengembalikan token jika login berhasil.
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
 
     try {
+        // PERBAIKAN PENTING:
+        // Gunakan `${BACKEND_URL}/admin/login` BUKAN `${BACKEND_URL}/api/admin/login`.
+        // Karena BACKEND_URL sudah disetel ke '/api' (dari .env),
+        // menambahkan '/api' lagi akan membuat URL menjadi '/api/api/admin/login', yang menyebabkan 404.
         const response = await fetch(`${BACKEND_URL}/admin/login`, {
             method: 'POST',
             headers: {
@@ -32,8 +35,7 @@ function Login({ onLoginSuccess, BACKEND_URL }) {
         }
 
         const data = await response.json();
-        // Simpan token yang diterima dari backend (misalnya ke localStorage)
-        onLoginSuccess(data.token); // Kirim token yang diterima dari backend ke onLoginSuccess
+        onLoginSuccess(data.token);
     } catch (err) {
         console.error('Login error:', err);
         setError('Tidak dapat terhubung ke server. Pastikan backend berjalan dan URL benar.');

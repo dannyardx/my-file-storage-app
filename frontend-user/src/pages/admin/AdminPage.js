@@ -2,26 +2,32 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
+// Gaya umum App.css user
 import '../../App.css';
+// Gaya spesifik AdminPage.css
 import './AdminPage.css';
 
+// Import komponen admin-specific
 import ConfirmationModal from '../../components/admin-components/ConfirmationModal';
 import Login from './Login';
 
-function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
+function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai props dari App.js
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [files, setFiles] = useState([]);
   const [newFile, setNewFile] = useState(null);
   const [newFileDescription, setNewFileDescription] = useState('');
   const [message, setMessage] = useState('Memuat daftar file...');
 
+  // --- STATE UNTUK MODAL KONFIRMASI ---
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [fileToDeleteName, setFileToDeleteName] = useState('');
+  // ------------------------------------------
 
   const showNotification = useCallback((msg, type) => {
     console.log(`[Admin Info] Type: ${type}, Message: ${msg}`);
   }, []);
 
+  // Fungsi untuk mengambil daftar file dari backend S3
   const fetchFiles = useCallback(async () => {
     setMessage('Memuat daftar file...');
     const token = localStorage.getItem('adminToken');
@@ -32,6 +38,8 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
     }
 
     try {
+      // PERBAIKAN PENTING:
+      // Gunakan `${BACKEND_URL}/admin/files` BUKAN `${BACKEND_URL}/api/admin/files`.
       const response = await fetch(`${BACKEND_URL}/admin/files`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -61,6 +69,7 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
     }
   }, [BACKEND_URL, showNotification]);
 
+  // Efek untuk memeriksa status login dan memuat file saat komponen di-mount
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
     if (token) {
@@ -71,6 +80,7 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
     }
   }, [fetchFiles]);
 
+  // Fungsi untuk mengunggah file ke backend S3
   const handleFileUpload = async (e) => {
     e.preventDefault();
     if (!newFile) {
@@ -90,6 +100,8 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
     formData.append('description', newFileDescription);
 
     try {
+      // PERBAIKAN PENTING:
+      // Gunakan `${BACKEND_URL}/admin/upload` BUKAN `${BACKEND_URL}/api/admin/upload`.
       const response = await fetch(`${BACKEND_URL}/admin/upload`, {
         method: 'POST',
         headers: {
@@ -121,11 +133,13 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
     }
   };
 
+  // Fungsi untuk menghapus file (memicu modal konfirmasi)
   const handleDeleteFile = (serverFileName) => {
     setFileToDeleteName(serverFileName);
     setShowDeleteModal(true);
   };
 
+  // Fungsi untuk mengkonfirmasi dan melakukan penghapusan file dari S3
   const handleConfirmDelete = async () => {
     setShowDeleteModal(false);
 
@@ -137,6 +151,8 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
     }
 
     try {
+      // PERBAIKAN PENTING:
+      // Gunakan `${BACKEND_URL}/admin/files/${fileToDeleteName}` BUKAN `${BACKEND_URL}/api/admin/files/${fileToDeleteName}`.
       const response = await fetch(`${BACKEND_URL}/admin/files/${fileToDeleteName}`, {
         method: 'DELETE',
         headers: {
@@ -165,13 +181,19 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
     }
   };
 
+  // Fungsi untuk membatalkan penghapusan
   const handleCancelDelete = () => {
     setShowDeleteModal(false);
     setFileToDeleteName('');
   };
 
+  // Fungsi untuk menyalin link download
   const handleShareClick = async (serverFileName) => {
-    const shareLink = `${FRONTEND_USER_URL}/download/${serverFileName}`;
+    // FRONTEND_USER_URL_PROD sudah di set ke 'https://thisismine.my.id' di Netlify Dashboard
+    // dan REACT_APP_BACKEND_URL_PROD di set ke '/api'
+    // Jadi URL ini akan menghasilkan: https://thisismine.my.id/download/NAMAFIE
+    // Ini benar, karena ini adalah URL publik untuk user, bukan internal API
+    const shareLink = `${FRONTEND_USER_URL}/download/${serverFileName}`; // Ini sudah benar untuk URL publik frontend user
     try {
       await navigator.clipboard.writeText(shareLink);
       showNotification(`Link "${shareLink}" disalin ke clipboard!`, 'success');
@@ -181,12 +203,14 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
     }
   };
 
+  // Fungsi untuk logout
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     setIsLoggedIn(false);
     showNotification('Anda telah logout.', 'success');
   };
 
+  // Fungsi yang dipanggil saat login berhasil dari komponen Login
   const handleLoginSuccess = (token) => {
     localStorage.setItem('adminToken', token);
     setIsLoggedIn(true);
@@ -194,10 +218,13 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
     fetchFiles();
   };
 
+  // Jika belum login, tampilkan komponen Login
   if (!isLoggedIn) {
+    // Kirim BACKEND_URL ke Login. Ini akan menjadi '/api' atau 'http://localhost:8888/api'
     return <Login onLoginSuccess={handleLoginSuccess} BACKEND_URL={BACKEND_URL} />;
   }
 
+  // Tampilan utama AdminPage setelah login
   return (
     <motion.div
       className="admin-app-container"
