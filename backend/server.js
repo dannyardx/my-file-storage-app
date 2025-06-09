@@ -1,42 +1,35 @@
 // backend/server.js
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const path = require('path'); // <-- PERBAIKAN DI SINI
+const fs = require('fs');     // <-- PERBAIKAN DI SINI
 const cors = require('cors');
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Middleware untuk CORS
-// Penting: Sesuaikan allowedOrigins dengan URL frontend produksi Anda
-const allowedOrigins = [
-    'http://localhost:3000',             // Untuk pengembangan lokal frontend-user
-    'http://localhost:3001',             // Untuk pengembangan lokal frontend-admin
-    'https://classy-taiyaki-e7ded3.netlify.app',    // <--- HAPUS GARIS MIRING DI AKHIR
-    'https://storagefile.netlify.app',     // <--- HAPUS GARIS MIRING DI AKHIR
-    'https://thisismine.my.id',          // URL domain kustom frontend-user Anda
-    'https://storagefile.netlify.app'     // URL subdomain kustom frontend-admin Anda
-];
-
-app.use(cors({
-    origin: function (origin, callback) {
-        // Izinkan permintaan tanpa origin (misalnya dari Postman, atau file:// pada browser lokal)
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) === -1) {
-            const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
-            console.warn(msg);
-            return callback(new Error(msg), false);
-        }
-        return callback(null, true);
-    }
+// =====================================================================
+// MIDDLEWARE CORS AGRESIIF UNTUK DEBUGGING - IZINKAN SEMUA ORIGIN (*)
+// =====================================================================
+app.options('*', cors({
+    origin: '*', // Izinkan semua origin untuk preflight
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token'],
+    credentials: true
 }));
 
-// Middleware untuk mengizinkan Express membaca JSON
+app.use(cors({
+    origin: '*', // Izinkan semua origin untuk permintaan utama
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token'],
+    credentials: true
+}));
+// =====================================================================
+
 app.use(express.json());
 
 // Direktori untuk menyimpan file yang diunggah
-const uploadDir = path.join(__dirname, 'uploads');
+const uploadDir = path.join(__dirname, 'uploads'); // <-- path.join sekarang berfungsi
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
@@ -66,7 +59,7 @@ const upload = multer({
         }
     },
     limits: {
-        fileSize: 100 * 1024 * 1024 // Batasan ukuran file 100MB
+        fileSize: 100 * 1024 * 1024
     }
 });
 
@@ -173,7 +166,7 @@ app.get('/api/files/download/:fileName', (req, res) => {
                 if (err.code === 'ECONNABORTED' || res.headersSent) {
                     console.warn('[BACKEND-DOWNLOAD] Client disconnected during download or headers already sent.');
                 } else {
-                    console.error("[BACKEND-DOWNLOAD] Error during file download:", err);
+                    console.error("[BACKEND] Error during file download:", err);
                     if (!res.headersSent) {
                         res.status(500).json({ message: 'Gagal mengunduh file.' });
                     }
@@ -184,7 +177,7 @@ app.get('/api/files/download/:fileName', (req, res) => {
         });
     } else {
         console.log(`[BACKEND-DOWNLOAD] File not found for download at path: ${filePath}`);
-        res.status(404).json({ message: 'File tidak ditemukan di server.' });
+        res.status(404).json({ message: 'File tidak ditemukan.' });
     }
 });
 
