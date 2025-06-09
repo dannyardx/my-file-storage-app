@@ -32,7 +32,7 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
     }
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/admin/files`, {
+      const response = await fetch(`${BACKEND_URL}/admin/files`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -90,7 +90,7 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
     formData.append('description', newFileDescription);
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/admin/upload`, {
+      const response = await fetch(`${BACKEND_URL}/admin/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -137,7 +137,7 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
     }
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/admin/files/${fileToDeleteName}`, {
+      const response = await fetch(`${BACKEND_URL}/admin/files/${fileToDeleteName}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

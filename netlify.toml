@@ -1,14 +1,14 @@
 [build]
-  base = "frontend-user" # 
-  publish = "build"      #
+  publish = "frontend-user/build"
   functions = "netlify/functions"
+  base = "frontend-user" # Jika disetel, pastikan ini benar
 
 [functions]
   node_bundler = "esbuild"
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
+  to = "/.netlify/functions/api/:splat" # Ini mengarahkan /api/X ke /.netlify/functions/api/X
   status = 200
   force = true
 

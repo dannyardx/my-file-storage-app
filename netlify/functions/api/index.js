@@ -1,4 +1,3 @@
-// backend/api/index.js
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
@@ -7,7 +6,7 @@ const cors = require('cors');
 const { S3Client, ListObjectsV2Command, HeadObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const { Upload } = require('@aws-sdk/lib-storage');
 
-const { verifyAdminCredentials, authenticateToken } = require('../auth'); // Path disesuaikan karena auth.js ada di parent
+const { verifyAdminCredentials, authenticateToken } = require('./auth'); // Path disesuaikan karena auth.js ada di parent
 
 const app = express();
 
