@@ -1,8 +1,8 @@
 // backend/server.js
 const express = require('express');
 const multer = require('multer');
-const path = require('path'); // <-- PERBAIKAN DI SINI
-const fs = require('fs');     // <-- PERBAIKAN DI SINI
+const path = require('path'); // <-- KOREKSI SANGAT PENTING DI SINI: Impor 'path'
+const fs = require('fs');     // <-- KOREKSI SANGAT PENTING DI SINI: Impor 'fs'
 const cors = require('cors');
 
 const app = express();
@@ -29,7 +29,8 @@ app.use(cors({
 app.use(express.json());
 
 // Direktori untuk menyimpan file yang diunggah
-const uploadDir = path.join(__dirname, 'uploads'); // <-- path.join sekarang berfungsi
+// path.join sekarang berfungsi dengan benar
+const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
