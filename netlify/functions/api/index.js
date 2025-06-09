@@ -15,8 +15,8 @@ const app = express();
 // Konfigurasi AWS S3 SDK v3
 // =====================================================================
 const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME;
-const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
-const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
+const AWS_ACCESS_KEY_ID = process.env.NETLIFY_AWS_ACCESS_KEY_ID;
+const AWS_SECRET_ACCESS_KEY = process.env.NETLIFY_AWS_SECRET_ACCESS_KEY;
 const AWS_REGION = process.env.AWS_REGION || 'ap-southeast-1';
 
 const s3Client = new S3Client({
