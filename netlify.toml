@@ -2,14 +2,14 @@
   base = "frontend-user"
   publish = "build"
   command = "npm run build"
-  functions = "netlify/functions"
+  functions = "netlify/functions" # Pastikan ini menunjuk ke folder yang namanya BENAR
 
 [functions]
   node_bundler = "esbuild"
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/api/:splat" # Ini akan mengarahkan /api/X ke /.netlify/functions/api/X
+  to = "/.netlify/functions/api/:splat"
   status = 200
   force = true
 
