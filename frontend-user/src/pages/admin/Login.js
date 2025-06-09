@@ -1,7 +1,7 @@
 // frontend-user/src/pages/admin/Login.js
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import './Login.css'; // Pastikan CSS ini ada
+import './Login.css';
 
 // Menerima BACKEND_URL sebagai prop
 function Login({ onLoginSuccess, BACKEND_URL }) {
@@ -12,7 +12,7 @@ function Login({ onLoginSuccess, BACKEND_URL }) {
   // Frontend akan mengirim password ke backend untuk validasi.
   // Backend akan mengembalikan token jika login berhasil.
 
-  const handleLogin = async (e) => { // Ubah jadi async
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
 

@@ -13,9 +13,9 @@ const DownloadPage = ({ BACKEND_URL }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [password, setPassword] = useState('');
-    // const [showPasswordInput, setShowPasswordInput] = useState(false); // Dihapus karena tidak digunakan
+    // setShowPasswordInput dan showPasswordInput state dihilangkan karena tidak digunakan
 
-    // showNotification diubah menjadi hanya log ke konsol untuk membersihkan kode
+    // showNotification diubah menjadi hanya log ke konsol
     const showNotification = useCallback((msg, type) => {
         console.log(`[Notification Suppressed] Type: ${type}, Message: ${msg}`);
     }, []);
@@ -53,9 +53,6 @@ const DownloadPage = ({ BACKEND_URL }) => {
             setFileInfo(data);
             // isProtected: Asumsi file publik tidak dilindungi. Jika ada fitur ini,
             // properti `isProtected` harus datang dari metadata S3 atau database.
-            // jika (data.isProtected) {
-            //     setShowPasswordInput(true); // Akan diaktifkan jika fitur password terlindungi diimplementasikan
-            // }
         } catch (err) {
             setError('Tidak dapat terhubung ke server.');
             showNotification('Tidak dapat terhubung ke server.', 'error');
@@ -72,31 +69,18 @@ const DownloadPage = ({ BACKEND_URL }) => {
         if (!fileInfo) return;
 
         let downloadUrl = `${BACKEND_URL}/api/files/download/${fileName}`;
-        let method = 'GET';
-        let headers = {};
-        let body = null;
-
-        // Logika ini untuk file yang dilindungi password.
-        // Saat ini backend hanya mendukung GET untuk download file.
-        // Jika fitur password terlindungi diimplementasikan, Anda mungkin
-        // perlu endpoint POST khusus atau penanganan token di sini.
-        if (fileInfo.isProtected) { // Asumsi fileInfo.isProtected datang dari backend
-            if (!password) {
-                showNotification('Masukkan kata sandi untuk mengunduh.', 'info');
-                return;
-            }
+        // Fitur download file terlindungi password belum didukung sepenuhnya di demo ini.
+        // Jika fileInfo.isProtected true, logikanya perlu ditambahkan di backend.
+        if (fileInfo.isProtected) { // Asumsi isProtected datang dari backend
             showNotification('Fitur unduh file terlindungi password belum didukung sepenuhnya di demo ini.', 'info');
             return; // Hentikan proses unduh jika password dibutuhkan tapi fitur belum siap
         }
 
         try {
-            const response = await fetch(downloadUrl, { method, headers, body });
-
+            const response = await fetch(downloadUrl); // Method GET default jika tidak ada body/headers khusus
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ message: 'Terjadi kesalahan tidak dikenal.' }));
-                if (response.status === 401) {
-                    showNotification('Kata sandi salah!', 'error');
-                } else if (response.status === 404) {
+                if (response.status === 404) {
                     showNotification('File tidak ditemukan.', 'error');
                 } else {
                     showNotification(errorData.message || 'Gagal mengunduh file.', 'error');
@@ -181,7 +165,7 @@ const DownloadPage = ({ BACKEND_URL }) => {
                 )}
 
                 {/* Input password hanya akan muncul jika isProtected benar-benar diaktifkan dari backend */}
-                {fileInfo.isProtected && ( // <-- Kondisi ini akan dievaluasi berdasarkan nilai isProtected dari backend
+                {fileInfo.isProtected && (
                     <div className="password-input-group">
                         <input
                             type="password"

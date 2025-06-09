@@ -2,36 +2,29 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-// Gaya umum App.css user
 import '../../App.css';
-// Gaya spesifik AdminPage.css (mengandung gaya admin-app-container, admin-section, dll.)
 import './AdminPage.css';
 
-// Import komponen admin-specific
 import ConfirmationModal from '../../components/admin-components/ConfirmationModal';
 import Login from './Login';
 
-function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai props dari App.js
+function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [files, setFiles] = useState([]);
   const [newFile, setNewFile] = useState(null);
-  const [newFileDescription, setNewFileDescription] = useState(''); // Perbaikan: useState('')
-  const [message, setMessage] = useState('Memuat daftar file...'); // Pesan untuk daftar file
+  const [newFileDescription, setNewFileDescription] = useState('');
+  const [message, setMessage] = useState('Memuat daftar file...');
 
-  // --- STATE UNTUK MODAL KONFIRMASI ---
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [fileToDeleteName, setFileToDeleteName] = useState(''); // Untuk menyimpan nama file yang akan dihapus
-  // ------------------------------------------
+  const [fileToDeleteName, setFileToDeleteName] = useState('');
 
-  // showNotification diubah menjadi hanya log ke konsol, karena kita tidak pakai komponen notifikasi UI
   const showNotification = useCallback((msg, type) => {
     console.log(`[Admin Info] Type: ${type}, Message: ${msg}`);
   }, []);
 
-  // Fungsi untuk mengambil daftar file dari backend S3
   const fetchFiles = useCallback(async () => {
-    setMessage('Memuat daftar file...'); // Pesan status saat memuat
-    const token = localStorage.getItem('adminToken'); // Ambil token dari localStorage
+    setMessage('Memuat daftar file...');
+    const token = localStorage.getItem('adminToken');
     if (!token) {
         setIsLoggedIn(false);
         showNotification('Tidak ada token autentikasi. Silakan login.', 'error');
@@ -41,18 +34,16 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
     try {
       const response = await fetch(`${BACKEND_URL}/api/admin/files`, {
         headers: {
-          'Authorization': `Bearer ${token}`, // Gunakan Bearer Token
+          'Authorization': `Bearer ${token}`,
         },
       });
       if (!response.ok) {
-        // Handle 401 (Unauthorized) atau 403 (Forbidden) sebagai token tidak valid
         if (response.status === 401 || response.status === 403) {
             localStorage.removeItem('adminToken');
             setIsLoggedIn(false);
             showNotification('Sesi berakhir atau token tidak valid. Silakan login kembali.', 'error');
             return;
         }
-        // Jika respons bukan OK, coba baca pesan error dari body JSON
         const errorData = await response.json().catch(() => ({ message: 'Terjadi kesalahan tidak dikenal atau bukan JSON.' }));
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
@@ -61,7 +52,7 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
       if (data.length === 0) {
           setMessage('Tidak ada file ZIP/RAR yang diunggah saat ini.');
       } else {
-          setMessage(''); // Hapus pesan jika ada file
+          setMessage('');
       }
     } catch (error) {
       console.error("Error fetching files for admin:", error);
@@ -70,18 +61,16 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
     }
   }, [BACKEND_URL, showNotification]);
 
-  // Efek untuk memeriksa status login dan memuat file saat komponen di-mount
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
-    if (token) { // Cukup periksa apakah token ada
+    if (token) {
       setIsLoggedIn(true);
-      fetchFiles(); // Panggil fetchFiles untuk memuat data jika token ada
+      fetchFiles();
     } else {
       setIsLoggedIn(false);
     }
-  }, [fetchFiles]); // Tambahkan fetchFiles ke dependencies
+  }, [fetchFiles]);
 
-  // Fungsi untuk mengunggah file ke backend S3
   const handleFileUpload = async (e) => {
     e.preventDefault();
     if (!newFile) {
@@ -104,8 +93,7 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
       const response = await fetch(`${BACKEND_URL}/api/admin/upload`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`, // Gunakan Bearer Token
-          // 'Content-Type': 'multipart/form-data' TIDAK PERLU KARENA FormData otomatis mengaturnya
+          'Authorization': `Bearer ${token}`,
         },
         body: formData,
       });
@@ -123,25 +111,23 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
 
       const result = await response.json();
       showNotification(`File '${result.fileName}' berhasil diunggah ke S3!`, 'success');
-      setNewFile(null); // Reset state file yang dipilih
-      setNewFileDescription(''); // Reset deskripsi
-      document.getElementById('fileInput').value = ''; // Reset input file visual
-      fetchFiles(); // Perbarui daftar file
+      setNewFile(null);
+      setNewFileDescription('');
+      document.getElementById('fileInput').value = '';
+      fetchFiles();
     } catch (error) {
       console.error("Error uploading file:", error);
       showNotification(`Gagal mengunggah file: ${error.message}`, 'error');
     }
   };
 
-  // Fungsi untuk menghapus file (memicu modal konfirmasi)
   const handleDeleteFile = (serverFileName) => {
     setFileToDeleteName(serverFileName);
-    setShowDeleteModal(true); // Tampilkan modal konfirmasi
+    setShowDeleteModal(true);
   };
 
-  // Fungsi untuk mengkonfirmasi dan melakukan penghapusan file dari S3
   const handleConfirmDelete = async () => {
-    setShowDeleteModal(false); // Tutup modal terlebih dahulu
+    setShowDeleteModal(false);
 
     const token = localStorage.getItem('adminToken');
     if (!token) {
@@ -154,7 +140,7 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
       const response = await fetch(`${BACKEND_URL}/api/admin/files/${fileToDeleteName}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`, // Gunakan Bearer Token
+          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -170,68 +156,60 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
       }
 
       showNotification(`File '${fileToDeleteName}' berhasil dihapus dari S3!`, 'success');
-      fetchFiles(); // Perbarui daftar file
+      fetchFiles();
     } catch (error) {
       console.error("Error deleting file:", error);
       showNotification(`Gagal menghapus file: ${error.message}`, 'error');
     } finally {
-      setFileToDeleteName(''); // Reset nama file yang akan dihapus
+      setFileToDeleteName('');
     }
   };
 
-  // Fungsi untuk membatalkan penghapusan
   const handleCancelDelete = () => {
-    setShowDeleteModal(false); // Tutup modal
-    setFileToDeleteName(''); // Reset nama file
+    setShowDeleteModal(false);
+    setFileToDeleteName('');
   };
 
-  // Fungsi untuk menyalin link download
   const handleShareClick = async (serverFileName) => {
-    // Pastikan FRONTEND_USER_URL sudah benar dari App.js yang mengirim props
     const shareLink = `${FRONTEND_USER_URL}/download/${serverFileName}`;
     try {
       await navigator.clipboard.writeText(shareLink);
-      showNotification(`Link "${shareLink}" disalin ke clipboard!`, 'success'); // Notifikasi sukses
+      showNotification(`Link "${shareLink}" disalin ke clipboard!`, 'success');
     } catch (err) {
       console.error('Gagal menyalin link:', err);
       showNotification('Gagal menyalin link.', 'error');
     }
   };
 
-  // Fungsi untuk logout
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     setIsLoggedIn(false);
     showNotification('Anda telah logout.', 'success');
   };
 
-  // Fungsi yang dipanggil saat login berhasil dari komponen Login
-  const handleLoginSuccess = (token) => { // Login component sekarang mengembalikan token
-    localStorage.setItem('adminToken', token); // Simpan token yang diterima dari backend
+  const handleLoginSuccess = (token) => {
+    localStorage.setItem('adminToken', token);
     setIsLoggedIn(true);
     showNotification('Login berhasil!', 'success');
-    fetchFiles(); // Panggil fetchFiles setelah login berhasil dan token tersimpan
+    fetchFiles();
   };
 
-  // Jika belum login, tampilkan komponen Login
   if (!isLoggedIn) {
-    return <Login onLoginSuccess={handleLoginSuccess} BACKEND_URL={BACKEND_URL} />; // Kirim BACKEND_URL ke Login
+    return <Login onLoginSuccess={handleLoginSuccess} BACKEND_URL={BACKEND_URL} />;
   }
 
-  // Tampilan utama AdminPage setelah login
   return (
     <motion.div
-      className="admin-app-container" // Menggunakan class ini dari App.css user
+      className="admin-app-container"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      {/* Admin Header (inline, bisa distyle di AdminPage.css) */}
       <header className="admin-header-inline">
          <h1>Panel Admin GhostVIP</h1>
          <p>Kelola file ZIP dan RAR Anda di S3.</p>
-         <motion.button // Tombol Logout dipindahkan ke header ini (atau footer AdminPage)
-             className="logout-button header-logout-button" // Class baru untuk posisi di header
+         <motion.button
+             className="logout-button header-logout-button"
              onClick={handleLogout}
              whileHover={{ scale: 1.05 }}
              whileTap={{ scale: 0.95 }}
@@ -241,10 +219,6 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
       </header>
 
       <main className="admin-content-area">
-        {/* Notifikasi (jika diaktifkan) */}
-        {/* <Notification message={notification.message} type={notification.type} onClose={() => setNotification({ message: '', type: '' })} /> */}
-
-        {/* Unggah File Baru */}
         <motion.section
           className="admin-section upload-section"
           initial={{ opacity: 0, y: 30 }}
@@ -278,7 +252,6 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
           </form>
         </motion.section>
 
-        {/* Daftar File Tersedia */}
         <motion.section
           className="admin-section file-list-section"
           initial={{ opacity: 0, y: 30 }}
@@ -332,7 +305,6 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
         </motion.section>
       </main>
 
-      {/* RENDER MODAL KONFIRMASI */}
       {showDeleteModal && (
         <ConfirmationModal
           title="Hapus File"
