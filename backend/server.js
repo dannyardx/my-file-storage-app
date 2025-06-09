@@ -1,10 +1,11 @@
 // backend/server.js
 const express = require('express');
 const multer = require('multer');
-const path = require('path'); // <-- KOREKSI SANGAT PENTING: Impor 'path' dengan benar
-const fs = require('fs');     // <-- KOREKSI SANGAT PENTING: Impor 'fs' dengan benar
+const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
 const AWS = require('aws-sdk'); // Impor AWS SDK
+const { verifyAdminCredentials, authenticateToken } = require('./auth'); // Impor fungsi autentikasi baru
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -27,25 +28,35 @@ const s3 = new AWS.S3(); // Buat instance S3
 
 
 // =====================================================================
-// MIDDLEWARE CORS AGRESIIF UNTUK PRODUKSI - IZINKAN SEMUA ORIGIN (*)
-// Ini untuk debugging. Nanti bisa diperketat kembali.
+// MIDDLEWARE CORS
+// PENTING: Untuk PRODUKSI, ganti 'origin: "*"' dengan domain frontend Anda
+// Contoh untuk produksi:
+// const allowedOrigins = ['https://your-frontend-domain.com', 'http://localhost:3000'];
+// app.use(cors({
+//     origin: function (origin, callback) {
+//         // Izinkan permintaan tanpa origin (misal dari aplikasi mobile atau curl)
+//         // dan dari domain yang diizinkan
+//         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+//             callback(null, true);
+//         } else {
+//             callback(new Error('Not allowed by CORS'));
+//         }
+//     },
+//     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+//     allowedHeaders: ['Content-Type', 'Authorization'], // Pastikan Authorization disertakan
+//     credentials: true
+// }));
+// app.options('*', cors()); // Pre-flight options for all routes
 // =====================================================================
-app.options('*', cors({
-    origin: '*', // Izinkan semua origin untuk preflight
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Semua metode
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token'], // Header kustom
-    credentials: true // Jika pakai cookie/sesi
-}));
-
 app.use(cors({
-    origin: '*', // Izinkan semua origin untuk permintaan utama
+    origin: '*', // Izinkan semua origin untuk permintaan utama (HANYA UNTUK DEVELOPMENT/DEMO)
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token'],
+    allowedHeaders: ['Content-Type', 'Authorization'], // Termasuk header Authorization
     credentials: true
 }));
-// =====================================================================
+app.options('*', cors()); // Mengatur respons preflight untuk semua rute
 
-app.use(express.json());
+app.use(express.json()); // Middleware untuk parsing JSON body
 
 // Konfigurasi Multer untuk membaca file ke dalam memori (bukan disk lokal)
 const upload = multer({
@@ -63,17 +74,6 @@ const upload = multer({
         fileSize: 100 * 1024 * 1024 // Batasan ukuran file 100MB
     }
 });
-
-// Middleware untuk otentikasi admin (contoh sederhana)
-const ADMIN_SECRET_TOKEN = process.env.ADMIN_SECRET_TOKEN || 'ADMIN123'; // Mengambil dari env, fallback ke hardcode
-
-const authenticateAdmin = (req, res, next) => {
-    const adminToken = req.headers['x-admin-token'];
-    if (!adminToken || adminToken !== ADMIN_SECRET_TOKEN) {
-        return res.status(403).json({ message: 'Akses terlarang: Token admin tidak valid.' });
-    }
-    next();
-};
 
 // ===========================================
 // ROUTES UNTUK PENGGUNA (PUBLIC)
@@ -94,7 +94,8 @@ app.get('/api/files', async (req, res) => {
             const serverFileName = item.Key; // Key adalah nama file di S3
             const parts = serverFileName.split('-');
             let originalName = serverFileName;
-            if (parts.length > 1 && /^\d+$/.test(parts[0])) {
+            // Hapus timestamp dari nama asli jika ada
+            if (parts.length > 1 && !isNaN(Number(parts[0])) && String(Number(parts[0])) === parts[0]) {
                 originalName = parts.slice(1).join('-');
             }
             return {
@@ -104,6 +105,7 @@ app.get('/api/files', async (req, res) => {
                 description: `File ${path.extname(originalName).substring(1).toUpperCase()}`,
                 fileSize: item.Size,
                 uploadDate: item.LastModified.toISOString()
+                // isProtected: false // Default atau tambahkan logika jika ada proteksi password
             };
         });
         console.log(`[BACKEND] Found ${fileList.length} files from S3 for public list.`);
@@ -127,18 +129,17 @@ app.get('/api/files/info/:fileName', async (req, res) => {
 
         const parts = serverFileName.split('-');
         let originalName = serverFileName;
-        if (parts.length > 1 && /^\d+$/.test(parts[0])) {
+        if (parts.length > 1 && !isNaN(Number(parts[0])) && String(Number(parts[0])) === parts[0]) {
             originalName = parts.slice(1).join('-');
         }
-
-        const description = `File ${path.extname(originalName).substring(1).toUpperCase()} (Ukuran: ${(data.ContentLength / (1024 * 1024)).toFixed(2)} MB)`;
 
         const fileInfo = {
             originalFileName: originalName,
             serverFileName: serverFileName,
-            description: description,
+            description: `File ${path.extname(originalName).substring(1).toUpperCase()}`, // Deskripsi default jika tidak ada metadata
             fileSize: data.ContentLength,
-            uploadDate: data.LastModified.toISOString()
+            uploadDate: data.LastModified.toISOString(),
+            isProtected: false // Asumsi file publik tidak dilindungi. Sesuaikan jika ada mekanisme proteksi file.
         };
         console.log("[BACKEND-INFO] File info sent from S3:", fileInfo);
         res.json(fileInfo);
@@ -163,7 +164,7 @@ app.get('/api/files/download/:fileName', (req, res) => {
 
     const parts = serverFileName.split('-');
     let originalName = serverFileName;
-    if (parts.length > 1 && /^\d+$/.test(parts[0])) {
+    if (parts.length > 1 && !isNaN(Number(parts[0])) && String(Number(parts[0])) === parts[0]) {
         originalName = parts.slice(1).join('-');
     }
 
@@ -185,7 +186,20 @@ app.get('/api/files/download/:fileName', (req, res) => {
 // ROUTES UNTUK ADMIN
 // ===========================================
 
-app.post('/api/admin/upload', authenticateAdmin, upload.single('file'), async (req, res) => {
+// Route untuk login admin
+app.post('/api/admin/login', (req, res) => {
+    const { password } = req.body;
+    const { success, token, message } = verifyAdminCredentials(password);
+
+    if (success) {
+        res.json({ message: 'Login berhasil!', token: token });
+    } else {
+        res.status(401).json({ message: message });
+    }
+});
+
+// Gunakan middleware autentikasi untuk semua rute admin lainnya
+app.post('/api/admin/upload', authenticateToken, upload.single('file'), async (req, res) => {
     console.log("[BACKEND] Admin upload request received.");
     if (!req.file) {
         console.log("[BACKEND] No file uploaded.");
@@ -201,7 +215,8 @@ app.post('/api/admin/upload', authenticateAdmin, upload.single('file'), async (r
         Key: serverFileName, // Nama file di S3
         Body: req.file.buffer, // Buffer dari Multer memoryStorage
         ContentType: req.file.mimetype, // Tipe MIME file
-        ACL: 'public-read' // Opsional: Jadikan objek bisa dibaca publik langsung (jika bucket policy mengizinkan)
+        ACL: 'private' // Ubah menjadi private secara default. Akses melalui download route.
+                         // Jika ingin publik, gunakan 'public-read' dan pastikan bucket policy mengizinkan.
     };
 
     try {
@@ -222,7 +237,7 @@ app.post('/api/admin/upload', authenticateAdmin, upload.single('file'), async (r
     }
 });
 
-app.get('/api/admin/files', authenticateAdmin, async (req, res) => {
+app.get('/api/admin/files', authenticateToken, async (req, res) => {
     console.log("[BACKEND] Admin files list request received.");
     try {
         const params = {
@@ -237,7 +252,7 @@ app.get('/api/admin/files', authenticateAdmin, async (req, res) => {
             const serverFileName = item.Key;
             const parts = serverFileName.split('-');
             let originalName = serverFileName;
-            if (parts.length > 1 && /^\d+$/.test(parts[0])) {
+            if (parts.length > 1 && !isNaN(Number(parts[0])) && String(Number(parts[0])) === parts[0]) {
                 originalName = parts.slice(1).join('-');
             }
             return {
@@ -257,7 +272,7 @@ app.get('/api/admin/files', authenticateAdmin, async (req, res) => {
     }
 });
 
-app.delete('/api/admin/files/:fileName', authenticateAdmin, async (req, res) => {
+app.delete('/api/admin/files/:fileName', authenticateToken, async (req, res) => {
     const serverFileName = req.params.fileName;
     console.log(`[BACKEND] Admin delete request for S3 file: ${serverFileName}`);
 

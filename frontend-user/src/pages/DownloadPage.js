@@ -4,25 +4,20 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaDownload, FaInfoCircle, FaFileAlt, FaLock, FaCalendarAlt } from 'react-icons/fa';
-// import Notification from '../components/Notification'; // Hapus atau komentari baris ini
 import './DownloadPage.css';
 
-const BACKEND_URL = 'http://localhost:5000';
-
-const DownloadPage = () => {
+// BACKEND_URL sekarang diambil sebagai prop dari App.js
+const DownloadPage = ({ BACKEND_URL }) => {
     const { fileName } = useParams();
     const [fileInfo, setFileInfo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [password, setPassword] = useState('');
-    const [showPasswordInput, setShowPasswordInput] = useState(false);
-    // const [notification, setNotification] = useState({ message: '', type: '' }); // Hapus atau komentari baris ini
+    // const [showPasswordInput, setShowPasswordInput] = useState(false); // Dihapus karena tidak digunakan
 
-    // Hapus atau komentari fungsi showNotification
+    // showNotification diubah menjadi hanya log ke konsol untuk membersihkan kode
     const showNotification = useCallback((msg, type) => {
-        // setNotification({ message: msg, type: type });
-        // setTimeout(() => setNotification({ message: '', type: '' }), 3000);
-        console.log(`[Notification Suppressed] Type: ${type}, Message: ${msg}`); // Opsional: log ke konsol
+        console.log(`[Notification Suppressed] Type: ${type}, Message: ${msg}`);
     }, []);
 
     // Efek untuk mencegah context menu (klik kanan) di DownloadPage
@@ -45,27 +40,29 @@ const DownloadPage = () => {
             if (!response.ok) {
                 if (response.status === 404) {
                     setError('File tidak ditemukan.');
-                    showNotification('File tidak ditemukan.', 'error'); // Biarkan pemanggilan ini jika Anda tidak ingin menghapus semua
+                    showNotification('File tidak ditemukan.', 'error');
                 } else {
-                    const errorData = await response.json();
+                    const errorData = await response.json().catch(() => ({ message: 'Terjadi kesalahan tidak dikenal.' }));
                     setError(errorData.message || 'Terjadi kesalahan saat mengambil info file.');
-                    showNotification(errorData.message || 'Gagal mengambil info file.', 'error'); // Biarkan pemanggilan ini
+                    showNotification(errorData.message || 'Gagal mengambil info file.', 'error');
                 }
                 setLoading(false);
                 return;
             }
             const data = await response.json();
             setFileInfo(data);
-            if (data.isProtected) {
-                setShowPasswordInput(true);
-            }
+            // isProtected: Asumsi file publik tidak dilindungi. Jika ada fitur ini,
+            // properti `isProtected` harus datang dari metadata S3 atau database.
+            // jika (data.isProtected) {
+            //     setShowPasswordInput(true); // Akan diaktifkan jika fitur password terlindungi diimplementasikan
+            // }
         } catch (err) {
             setError('Tidak dapat terhubung ke server.');
-            showNotification('Tidak dapat terhubung ke server.', 'error'); // Biarkan pemanggilan ini
+            showNotification('Tidak dapat terhubung ke server.', 'error');
         } finally {
             setLoading(false);
         }
-    }, [fileName, showNotification]);
+    }, [fileName, BACKEND_URL, showNotification]);
 
     useEffect(() => {
         fetchFileInfo();
@@ -79,27 +76,30 @@ const DownloadPage = () => {
         let headers = {};
         let body = null;
 
-        if (fileInfo.isProtected) {
+        // Logika ini untuk file yang dilindungi password.
+        // Saat ini backend hanya mendukung GET untuk download file.
+        // Jika fitur password terlindungi diimplementasikan, Anda mungkin
+        // perlu endpoint POST khusus atau penanganan token di sini.
+        if (fileInfo.isProtected) { // Asumsi fileInfo.isProtected datang dari backend
             if (!password) {
-                showNotification('Masukkan kata sandi untuk mengunduh.', 'info'); // Biarkan pemanggilan ini
+                showNotification('Masukkan kata sandi untuk mengunduh.', 'info');
                 return;
             }
-            method = 'POST';
-            headers['Content-Type'] = 'application/json';
-            body = JSON.stringify({ password });
+            showNotification('Fitur unduh file terlindungi password belum didukung sepenuhnya di demo ini.', 'info');
+            return; // Hentikan proses unduh jika password dibutuhkan tapi fitur belum siap
         }
 
         try {
             const response = await fetch(downloadUrl, { method, headers, body });
 
             if (!response.ok) {
-                const errorData = await response.json();
+                const errorData = await response.json().catch(() => ({ message: 'Terjadi kesalahan tidak dikenal.' }));
                 if (response.status === 401) {
-                    showNotification('Kata sandi salah!', 'error'); // Biarkan pemanggilan ini
+                    showNotification('Kata sandi salah!', 'error');
                 } else if (response.status === 404) {
-                    showNotification('File tidak ditemukan.', 'error'); // Biarkan pemanggilan ini
+                    showNotification('File tidak ditemukan.', 'error');
                 } else {
-                    showNotification(errorData.message || 'Gagal mengunduh file.', 'error'); // Biarkan pemanggilan ini
+                    showNotification(errorData.message || 'Gagal mengunduh file.', 'error');
                 }
                 return;
             }
@@ -114,10 +114,10 @@ const DownloadPage = () => {
             a.remove();
             window.URL.revokeObjectURL(url);
 
-            showNotification('File berhasil diunduh!', 'success'); // Biarkan pemanggilan ini
+            showNotification('File berhasil diunduh!', 'success');
 
         } catch (err) {
-            showNotification('Terjadi kesalahan jaringan atau server.', 'error'); // Biarkan pemanggilan ini
+            showNotification('Terjadi kesalahan jaringan atau server.', 'error');
         }
     };
 
@@ -137,8 +137,6 @@ const DownloadPage = () => {
     if (error) {
         return (
             <div className="download-page-container">
-                {/* Hapus atau komentari baris ini */}
-                {/* <Notification message={notification.message} type={notification.type} onClose={() => setNotification({ message: '', type: '' })} /> */}
                 <div className="download-card">
                     <p className="download-error-message"><FaInfoCircle /> {error}</p>
                 </div>
@@ -149,8 +147,6 @@ const DownloadPage = () => {
     if (!fileInfo) {
         return (
             <div className="download-page-container">
-                {/* Hapus atau komentari baris ini */}
-                {/* <Notification message={notification.message} type={notification.type} onClose={() => setNotification({ message: '', type: '' })} /> */}
                 <div className="download-card">
                     <p className="download-error-message">Tidak ada informasi file yang tersedia.</p>
                 </div>
@@ -160,8 +156,6 @@ const DownloadPage = () => {
 
     return (
         <div className="download-page-container">
-            {/* Hapus atau komentari baris ini */}
-            {/* <Notification message={notification.message} type={notification.type} onClose={() => setNotification({ message: '', type: '' })} /> */}
             <motion.div
                 className="download-card"
                 variants={cardVariants}
@@ -178,6 +172,7 @@ const DownloadPage = () => {
                     </div>
                 )}
 
+                {/* isProtected perlu didapatkan dari backend, saat ini belum diimplementasikan */}
                 {fileInfo.isProtected && (
                     <div className="file-info-detail protected-info">
                         <FaLock className="info-icon" />
@@ -185,7 +180,8 @@ const DownloadPage = () => {
                     </div>
                 )}
 
-                {showPasswordInput && (
+                {/* Input password hanya akan muncul jika isProtected benar-benar diaktifkan dari backend */}
+                {fileInfo.isProtected && ( // <-- Kondisi ini akan dievaluasi berdasarkan nilai isProtected dari backend
                     <div className="password-input-group">
                         <input
                             type="password"

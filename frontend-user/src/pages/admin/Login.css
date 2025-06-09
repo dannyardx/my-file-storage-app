@@ -1,4 +1,4 @@
-/* frontend-admin/src/Login.css */
+/* frontend-user/src/Login.css */
 
 .login-container {
     display: flex;
@@ -61,7 +61,7 @@
 }
 
 .form-group input[type="text"]:focus,
-.form-group input[type="password"]:focus {
+.form-group input[type="password"]:focus { /* Hapus duplikasi di sini */
     outline: none;
     border-color: var(--accent-purple);
     box-shadow: 0 0 0 3px rgba(106, 92, 205, 0.3); /* Subtle focus glow */

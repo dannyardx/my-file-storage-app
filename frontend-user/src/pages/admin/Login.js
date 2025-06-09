@@ -1,24 +1,42 @@
-// frontend-admin/src/Login.js
+// frontend-user/src/pages/admin/Login.js
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import './Login.css'; // Pastikan CSS ini ada
 
-function Login({ onLoginSuccess }) {
+// Menerima BACKEND_URL sebagai prop
+function Login({ onLoginSuccess, BACKEND_URL }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const ADMIN_PASSWORD = 'ADMIN123';
-  const ADMIN_SECRET_TOKEN = 'ADMIN123';
+  // Kredensial tidak lagi di-hardcode di frontend.
+  // Frontend akan mengirim password ke backend untuk validasi.
+  // Backend akan mengembalikan token jika login berhasil.
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => { // Ubah jadi async
     e.preventDefault();
     setError('');
 
-    if (password === ADMIN_PASSWORD) {
-      localStorage.setItem('adminToken', ADMIN_SECRET_TOKEN);
-      onLoginSuccess();
-    } else {
-      setError('Password salah. Silakan coba lagi.');
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/admin/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ password }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Terjadi kesalahan tidak dikenal.' }));
+            setError(errorData.message || 'Login gagal. Silakan coba lagi.');
+            return;
+        }
+
+        const data = await response.json();
+        // Simpan token yang diterima dari backend (misalnya ke localStorage)
+        onLoginSuccess(data.token); // Kirim token yang diterima dari backend ke onLoginSuccess
+    } catch (err) {
+        console.error('Login error:', err);
+        setError('Tidak dapat terhubung ke server. Pastikan backend berjalan dan URL benar.');
     }
   };
 

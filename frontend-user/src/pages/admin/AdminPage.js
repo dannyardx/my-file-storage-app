@@ -15,19 +15,13 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [files, setFiles] = useState([]);
   const [newFile, setNewFile] = useState(null);
-  const [newFileDescription, setNewFileDescription] = '';
+  const [newFileDescription, setNewFileDescription] = useState(''); // Perbaikan: useState('')
   const [message, setMessage] = useState('Memuat daftar file...'); // Pesan untuk daftar file
 
   // --- STATE UNTUK MODAL KONFIRMASI ---
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [fileToDeleteName, setFileToDeleteName] = useState(''); // Untuk menyimpan nama file yang akan dihapus
   // ------------------------------------------
-
-  // Tidak ada komponen Notification di sini, hanya console.log()
-  // const [notification, setNotification] = useState({ message: '', type: '' });
-
-  // ADMIN_SECRET_TOKEN di frontend (untuk demo). Di produksi, ini harus diamankan atau dibaca dari backend.
-  const ADMIN_SECRET_TOKEN = 'ADMIN123';
 
   // showNotification diubah menjadi hanya log ke konsol, karena kita tidak pakai komponen notifikasi UI
   const showNotification = useCallback((msg, type) => {
@@ -37,14 +31,22 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
   // Fungsi untuk mengambil daftar file dari backend S3
   const fetchFiles = useCallback(async () => {
     setMessage('Memuat daftar file...'); // Pesan status saat memuat
+    const token = localStorage.getItem('adminToken'); // Ambil token dari localStorage
+    if (!token) {
+        setIsLoggedIn(false);
+        showNotification('Tidak ada token autentikasi. Silakan login.', 'error');
+        return;
+    }
+
     try {
       const response = await fetch(`${BACKEND_URL}/api/admin/files`, {
         headers: {
-          'x-admin-token': ADMIN_SECRET_TOKEN,
+          'Authorization': `Bearer ${token}`, // Gunakan Bearer Token
         },
       });
       if (!response.ok) {
-        if (response.status === 403) {
+        // Handle 401 (Unauthorized) atau 403 (Forbidden) sebagai token tidak valid
+        if (response.status === 401 || response.status === 403) {
             localStorage.removeItem('adminToken');
             setIsLoggedIn(false);
             showNotification('Sesi berakhir atau token tidak valid. Silakan login kembali.', 'error');
@@ -66,18 +68,18 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
       setMessage(`Gagal memuat daftar file: ${error.message}. Pastikan backend berjalan.`);
       showNotification(`Gagal memuat daftar file: ${error.message}`, 'error');
     }
-  }, [BACKEND_URL, ADMIN_SECRET_TOKEN, setIsLoggedIn, showNotification]);
+  }, [BACKEND_URL, showNotification]);
 
   // Efek untuk memeriksa status login dan memuat file saat komponen di-mount
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
-    if (token === ADMIN_SECRET_TOKEN) { // Untuk demo, membandingkan token di localStorage dengan hardcode
+    if (token) { // Cukup periksa apakah token ada
       setIsLoggedIn(true);
-      fetchFiles();
+      fetchFiles(); // Panggil fetchFiles untuk memuat data jika token ada
     } else {
       setIsLoggedIn(false);
     }
-  }, [fetchFiles, ADMIN_SECRET_TOKEN]);
+  }, [fetchFiles]); // Tambahkan fetchFiles ke dependencies
 
   // Fungsi untuk mengunggah file ke backend S3
   const handleFileUpload = async (e) => {
@@ -85,6 +87,13 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
     if (!newFile) {
       showNotification('Pilih file untuk diunggah!', 'error');
       return;
+    }
+
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+        showNotification('Tidak terautentikasi. Silakan login kembali.', 'error');
+        setIsLoggedIn(false);
+        return;
     }
 
     const formData = new FormData();
@@ -95,7 +104,7 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
       const response = await fetch(`${BACKEND_URL}/api/admin/upload`, {
         method: 'POST',
         headers: {
-          'x-admin-token': ADMIN_SECRET_TOKEN,
+          'Authorization': `Bearer ${token}`, // Gunakan Bearer Token
           // 'Content-Type': 'multipart/form-data' TIDAK PERLU KARENA FormData otomatis mengaturnya
         },
         body: formData,
@@ -103,7 +112,7 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Terjadi kesalahan tidak dikenal atau bukan JSON.' }));
-        if (response.status === 403) {
+        if (response.status === 401 || response.status === 403) {
             localStorage.removeItem('adminToken');
             setIsLoggedIn(false);
             showNotification('Sesi berakhir atau token tidak valid. Silakan login kembali.', 'error');
@@ -134,17 +143,24 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
   const handleConfirmDelete = async () => {
     setShowDeleteModal(false); // Tutup modal terlebih dahulu
 
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+        showNotification('Tidak terautentikasi. Silakan login kembali.', 'error');
+        setIsLoggedIn(false);
+        return;
+    }
+
     try {
       const response = await fetch(`${BACKEND_URL}/api/admin/files/${fileToDeleteName}`, {
         method: 'DELETE',
         headers: {
-          'x-admin-token': ADMIN_SECRET_TOKEN,
+          'Authorization': `Bearer ${token}`, // Gunakan Bearer Token
         },
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Terjadi kesalahan tidak dikenal atau bukan JSON.' }));
-        if (response.status === 403) {
+        if (response.status === 401 || response.status === 403) {
             localStorage.removeItem('adminToken');
             setIsLoggedIn(false);
             showNotification('Sesi berakhir atau token tidak valid. Silakan login kembali.', 'error');
@@ -190,10 +206,11 @@ function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai
   };
 
   // Fungsi yang dipanggil saat login berhasil dari komponen Login
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = (token) => { // Login component sekarang mengembalikan token
+    localStorage.setItem('adminToken', token); // Simpan token yang diterima dari backend
     setIsLoggedIn(true);
     showNotification('Login berhasil!', 'success');
-    fetchFiles();
+    fetchFiles(); // Panggil fetchFiles setelah login berhasil dan token tersimpan
   };
 
   // Jika belum login, tampilkan komponen Login

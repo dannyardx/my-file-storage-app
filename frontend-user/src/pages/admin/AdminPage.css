@@ -26,10 +26,10 @@
 }
 
 /* Gaya untuk logout-button, ini untuk posisi di AdminPage.js */
-.logout-button.bottom-logout-button {
+.logout-button.header-logout-button { /* Ubah kelas untuk posisi di header */
     display: block; /* Agar mengambil lebar penuh parent dan bisa di-margin auto */
     width: fit-content; /* Sesuai lebar kontennya */
-    margin: 2.5rem auto; /* Margin atas dan bawah, pusatkan horizontal */
+    margin: 1.5rem auto 0.5rem auto; /* Margin atas dan bawah, pusatkan horizontal */
     background-color: #dc3545;
     color: white;
     padding: 0.8rem 1.8rem;
@@ -43,26 +43,19 @@
     text-align: center;
 }
 
-.logout-button.bottom-logout-button:hover {
+.logout-button.header-logout-button:hover { /* Sesuaikan hover untuk kelas baru */
     background-color: #c82333;
     transform: translateY(-2px);
     box-shadow: 0 6px 15px rgba(220, 53, 69, 0.5);
 }
 
 /* Gaya umum untuk admin-section, upload-form, file-list, dll. */
-/* Salin semua gaya yang relevan dari frontend-admin/src/App.css lama ke sini */
-/* (admin-content-area, admin-section, upload-form, file-input, description-input,
-   file-selector-button, upload-button, file-list-container, admin-file-item,
-   file-info, file-name, file-description, file-size-date, file-actions,
-   delete-button, share-button, no-files-message, admin-footer (jika ada footer spesifik admin)) */
-
-/* Contoh: */
 .admin-content-area {
     flex-grow: 1;
     padding: 2.5rem;
     max-width: 1000px;
     margin: 2.5rem auto;
-    background-color: var(--dark-bg-primary); /* Pastikan ini transparan jika ingin partikel terlihat */
+    background-color: transparent; /* Pastikan ini transparan jika ingin partikel terlihat */
     width: 100%;
     position: relative;
     z-index: 1; /* Di atas partikel */
@@ -310,7 +303,7 @@
         font-size: 0.8em;
     }
     /* Sesuaikan tombol logout untuk mobile jika posisinya di bawah */
-    .logout-button.bottom-logout-button {
+    .logout-button.header-logout-button { /* Sesuaikan kelas */
         margin: 1.5rem auto;
         padding: 0.7rem 1.5rem;
         font-size: 0.95em;
@@ -347,7 +340,7 @@
     .file-size-date {
         font-size: 0.75em;
     }
-    .logout-button.bottom-logout-button {
+    .logout-button.header-logout-button { /* Sesuaikan kelas */
         padding: 0.6rem 1.2rem;
         font-size: 0.9em;
     }
