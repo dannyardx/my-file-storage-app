@@ -1,43 +1,38 @@
 // backend/server.js
 const express = require('express');
 const multer = require('multer');
-const path = require('path'); // <-- KOREKSI SANGAT PENTING: Impor 'path' dengan benar
-const fs = require('fs');     // <-- KOREKSI SANGAT PENTING: Impor 'fs' dengan benar
+const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
 
 const app = express();
 const port = process.env.PORT || 5000;
 
 // =====================================================================
-// MIDDLEWARE CORS AGRESIIF UNTUK PRODUKSI - IZINKAN SEMUA ORIGIN (*)
-// Ini hanya untuk tujuan debugging dan konfirmasi.
-// JANGAN GUNAKAN INI DI PRODUKSI JANGKA PANJANG TANPA ALASAN KEAMANAN YANG KUAT.
-// Setelah berhasil, KEMBALIKAN KE DAFTAR allowedOrigins YANG SPESIFIK.
+// MIDDLEWARE CORS AGRESIIF
 // =====================================================================
 app.options('*', cors({
     origin: '*', // Izinkan semua origin untuk preflight
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // PASTIKAN DELETE ADA DI SINI
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token'], // PASTIKAN x-admin-token ADA DI SINI
     credentials: true
 }));
 
 app.use(cors({
     origin: '*', // Izinkan semua origin untuk permintaan utama
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // PASTIKAN DELETE ADA DI SINI
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token'], // PASTIKAN x-admin-token ADA DI SINI
     credentials: true
 }));
 // =====================================================================
 
 app.use(express.json());
 
-// Direktori untuk menyimpan file yang diunggah
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
 
-// Konfigurasi Multer untuk penyimpanan file
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, uploadDir);
@@ -66,7 +61,6 @@ const upload = multer({
     }
 });
 
-// Middleware untuk otentikasi admin (contoh sederhana)
 const ADMIN_SECRET_TOKEN = process.env.ADMIN_SECRET_TOKEN || 'ADMIN123';
 
 const authenticateAdmin = (req, res, next) => {
@@ -81,194 +75,203 @@ const authenticateAdmin = (req, res, next) => {
 // ROUTES UNTUK PENGGUNA (PUBLIC)
 // ===========================================
 
-app.get('/api/files', (req, res) => {
+app.get('/api/files', async (req, res) => {
     console.log("[BACKEND] Request received for /api/files (public list)");
-    if (!fs.existsSync(uploadDir)) {
-        console.log("[BACKEND] Upload directory does not exist, returning empty array.");
-        return res.json([]);
-    }
+    try {
+        const params = {
+            Bucket: S3_BUCKET_NAME
+        };
+        const data = await s3.listObjectsV2(params).promise();
 
-    fs.readdir(uploadDir, async (err, files) => {
-        if (err) {
-            console.error("[BACKEND] Error reading public upload directory:", err);
-            return res.status(500).json({ message: 'Gagal membaca daftar file publik.' });
-        }
-
-        const fileList = files.filter(file => {
-            const ext = path.extname(file).toLowerCase();
+        const fileList = data.Contents.filter(item => {
+            const ext = path.extname(item.Key).toLowerCase();
             return ext === '.zip' || ext === '.rar';
-        }).map(file => {
-            const parts = file.split('-');
-            let originalName = file;
+        }).map(item => {
+            const serverFileName = item.Key;
+            const parts = serverFileName.split('-');
+            let originalName = serverFileName;
             if (parts.length > 1 && /^\d+$/.test(parts[0])) {
                 originalName = parts.slice(1).join('-');
             }
             return {
-                id: file,
+                id: serverFileName,
                 name: originalName,
-                serverFileName: file,
+                serverFileName: serverFileName,
                 description: `File ${path.extname(originalName).substring(1).toUpperCase()}`,
+                fileSize: item.Size,
+                uploadDate: item.LastModified.toISOString()
             };
         });
-        console.log(`[BACKEND] Found ${fileList.length} files for public list.`);
+        console.log(`[BACKEND] Found ${fileList.length} files from S3 for public list.`);
         res.json(fileList);
-    });
+    } catch (error) {
+        console.error("[BACKEND] Error listing files from S3:", error);
+        res.status(500).json({ message: 'Gagal memuat daftar file publik dari S3.' });
+    }
 });
 
-app.get('/api/files/info/:fileName', (req, res) => {
+app.get('/api/files/info/:fileName', async (req, res) => {
     const serverFileName = req.params.fileName;
-    const filePath = path.join(uploadDir, serverFileName);
-    console.log(`[BACKEND-INFO] Request received for file info: ${serverFileName}`);
-    console.log(`[BACKEND-INFO] Attempting to find file at path: ${filePath}`);
-
-    if (!fs.existsSync(filePath)) {
-        console.log(`[BACKEND-INFO] File not found for info request at: ${filePath}`);
-        return res.status(404).json({ message: 'File tidak ditemukan.' });
-    }
+    console.log(`[BACKEND-INFO] Request received for file info from S3: ${serverFileName}`);
 
     try {
-        const stats = fs.statSync(filePath);
+        const headParams = {
+            Bucket: S3_BUCKET_NAME,
+            Key: serverFileName
+        };
+        const data = await s3.headObject(headParams).promise();
+
         const parts = serverFileName.split('-');
         let originalName = serverFileName;
         if (parts.length > 1 && /^\d+$/.test(parts[0])) {
             originalName = parts.slice(1).join('-');
         }
 
-        const description = `File ${path.extname(originalName).substring(1).toUpperCase()} (Ukuran: ${(stats.size / (1024 * 1024)).toFixed(2)} MB)`;
+        const description = `File ${path.extname(originalName).substring(1).toUpperCase()} (Ukuran: ${(data.ContentLength / (1024 * 1024)).toFixed(2)} MB)`;
 
         const fileInfo = {
             originalFileName: originalName,
             serverFileName: serverFileName,
             description: description,
-            fileSize: stats.size,
-            uploadDate: stats.birthtime.toISOString()
+            fileSize: data.ContentLength,
+            uploadDate: data.LastModified.toISOString()
         };
-        console.log("[BACKEND-INFO] File info sent:", fileInfo);
+        console.log("[BACKEND-INFO] File info sent from S3:", fileInfo);
         res.json(fileInfo);
     } catch (error) {
-        console.error(`[BACKEND-INFO] Error getting file stats for ${serverFileName}:`, error);
-        return res.status(500).json({ message: 'Gagal mengambil informasi file.' });
+        if (error.code === 'NotFound') {
+            console.log(`[BACKEND-INFO] File not found in S3: ${serverFileName}`);
+            return res.status(404).json({ message: 'File tidak ditemukan di S3.' });
+        }
+        console.error(`[BACKEND-INFO] Error getting file info from S3 for ${serverFileName}:`, error);
+        return res.status(500).json({ message: 'Gagal mengambil informasi file dari S3.' });
     }
 });
 
 app.get('/api/files/download/:fileName', (req, res) => {
     const serverFileName = req.params.fileName;
-    const filePath = path.join(uploadDir, serverFileName);
     console.log(`[BACKEND-DOWNLOAD] Download request received for: ${serverFileName}`);
-    console.log(`[BACKEND-DOWNLOAD] Attempting to serve file from path: ${filePath}`);
 
-    if (fs.existsSync(filePath)) {
-        const parts = serverFileName.split('-');
-        let originalName = serverFileName;
-        if (parts.length > 1 && /^\d+$/.test(parts[0])) {
-            originalName = parts.slice(1).join('-');
-        }
-        console.log(`[BACKEND-DOWNLOAD] Serving file: ${filePath} as ${originalName}`);
-        res.download(filePath, originalName, (err) => {
-            if (err) {
-                if (err.code === 'ECONNABORTED' || res.headersSent) {
-                    console.warn('[BACKEND-DOWNLOAD] Client disconnected during download or headers already sent.');
-                } else {
-                    console.error("[BACKEND] Error during file download:", err);
-                    if (!res.headersSent) {
-                        res.status(500).json({ message: 'Gagal mengunduh file.' });
-                    }
-                }
-            } else {
-                    console.log(`[BACKEND-DOWNLOAD] File ${originalName} (${serverFileName}) successfully downloaded.`);
-            }
-        });
-    } else {
-        console.log(`[BACKEND-DOWNLOAD] File not found for download at path: ${filePath}`);
-        res.status(404).json({ message: 'File tidak ditemukan.' });
+    const params = {
+        Bucket: S3_BUCKET_NAME,
+        Key: serverFileName
+    };
+
+    const parts = serverFileName.split('-');
+    let originalName = serverFileName;
+    if (parts.length > 1 && /^\d+$/.test(parts[0])) {
+        originalName = parts.slice(1).join('-');
     }
+
+    res.attachment(originalName);
+
+    const fileStream = s3.getObject(params).createReadStream();
+    fileStream.on('error', (err) => {
+        console.error(`[BACKEND-DOWNLOAD] Error streaming file from S3: ${serverFileName}`, err);
+        if (!res.headersSent) {
+            res.status(500).json({ message: 'Gagal mengunduh file dari S3.' });
+        }
+    });
+    fileStream.pipe(res);
+    console.log(`[BACKEND-DOWNLOAD] Initiated stream for file ${originalName} from S3.`);
 });
 
 // ===========================================
 // ROUTES UNTUK ADMIN
 // ===========================================
 
-app.post('/api/admin/upload', authenticateAdmin, upload.single('file'), (req, res) => {
+app.post('/api/admin/upload', authenticateAdmin, upload.single('file'), async (req, res) => {
     console.log("[BACKEND] Admin upload request received.");
     if (!req.file) {
         console.log("[BACKEND] No file uploaded.");
         return res.status(400).json({ message: 'Tidak ada file yang diunggah.' });
     }
-    const fileNameOnServer = req.file.filename;
-    const description = req.body.description || `File ${path.extname(req.file.originalname).substring(1).toUpperCase()}`;
 
-    console.log(`[BACKEND] File uploaded: ${req.file.originalname} as ${fileNameOnServer}, Description: ${description}`);
-    res.status(200).json({
-        message: 'File berhasil diunggah!',
-        fileName: req.file.originalname,
-        serverFileName: fileNameOnServer,
-        description: description,
-        fileSize: req.file.size,
-        uploadDate: new Date().toISOString()
-    });
+    const originalName = req.file.originalname;
+    const serverFileName = `${Date.now()}-${originalName}`;
+    const description = req.body.description || `File ${path.extname(originalName).substring(1).toUpperCase()}`;
+
+    const params = {
+        Bucket: S3_BUCKET_NAME,
+        Key: serverFileName,
+        Body: req.file.buffer,
+        ContentType: req.file.mimetype,
+        ACL: 'public-read'
+    };
+
+    try {
+        const data = await s3.upload(params).promise();
+        console.log(`[BACKEND] File uploaded to S3: ${data.Location}`);
+        res.status(200).json({
+            message: 'File berhasil diunggah ke S3!',
+            fileName: originalName,
+            serverFileName: serverFileName,
+            description: description,
+            fileSize: req.file.size,
+            uploadDate: new Date().toISOString(),
+            s3Location: data.Location
+        });
+    } catch (error) {
+        console.error("Error uploading file to S3:", error);
+        res.status(500).json({ message: `Gagal mengunggah file ke S3: ${error.message}` });
+    }
 });
 
-app.get('/api/admin/files', authenticateAdmin, (req, res) => {
+app.get('/api/admin/files', authenticateAdmin, async (req, res) => {
     console.log("[BACKEND] Admin files list request received.");
-    if (!fs.existsSync(uploadDir)) {
-        console.log("[BACKEND] Upload directory does not exist, returning empty array.");
-        return res.json([]);
-    }
+    try {
+        const params = {
+            Bucket: S3_BUCKET_NAME
+        };
+        const data = await s3.listObjectsV2(params).promise();
 
-    fs.readdir(uploadDir, (err, files) => {
-        if (err) {
-            console.error("[BACKEND] Error reading admin upload directory:", err);
-            return res.status(500).json({ message: 'Gagal membaca daftar file admin.' });
-        }
-
-        const fileList = files.filter(file => {
-            const ext = path.extname(file).toLowerCase();
+        const fileList = data.Contents.filter(item => {
+            const ext = path.extname(item.Key).toLowerCase();
             return ext === '.zip' || ext === '.rar';
-        }).map(file => {
-            const parts = file.split('-');
-            let originalName = file;
+        }).map(item => {
+            const serverFileName = item.Key;
+            const parts = serverFileName.split('-');
+            let originalName = serverFileName;
             if (parts.length > 1 && /^\d+$/.test(parts[0])) {
                 originalName = parts.slice(1).join('-');
             }
-            const filePath = path.join(uploadDir, file);
-            let stats = null;
-            try {
-                stats = fs.statSync(filePath);
-            } catch (statErr) {
-                console.warn(`[BACKEND] Could not stat file ${filePath}:`, statErr.message);
-            }
-
             return {
-                id: file,
+                id: serverFileName,
                 name: originalName,
-                serverFileName: file,
+                serverFileName: serverFileName,
                 description: `File ${path.extname(originalName).substring(1).toUpperCase()}`,
-                fileSize: stats ? stats.size : 0,
-                uploadDate: stats ? stats.birthtime.toISOString() : new Date().toISOString()
+                fileSize: item.Size,
+                uploadDate: item.LastModified.toISOString()
             };
         });
-        console.log(`[BACKEND] Found ${fileList.length} files for admin list.`);
+        console.log(`[BACKEND] Found ${fileList.length} files from S3 for admin list.`);
         res.json(fileList);
-    });
+    } catch (error) {
+        console.error("[BACKEND] Error listing files from S3 for admin:", error);
+        res.status(500).json({ message: 'Gagal memuat daftar file admin dari S3.' });
+    }
 });
 
-app.delete('/api/admin/files/:fileName', authenticateAdmin, (req, res) => {
-    const fileName = req.params.fileName;
-    const filePath = path.join(uploadDir, fileName);
-    console.log(`[BACKEND] Admin delete request for: ${fileName}`);
+app.delete('/api/admin/files/:fileName', authenticateAdmin, async (req, res) => { // Pastikan ini async
+    const serverFileName = req.params.fileName; // Ubah nama parameter
+    console.log(`[BACKEND] Admin delete request for S3 file: ${serverFileName}`);
 
-    if (fs.existsSync(filePath)) {
-        fs.unlink(filePath, (err) => {
-            if (err) {
-                console.error("[BACKEND] Error deleting file:", err);
-                return res.status(500).json({ message: 'Gagal menghapus file.' });
-            }
-            console.log(`[BACKEND] File ${fileName} successfully deleted.`);
-            res.status(200).json({ message: 'File berhasil dihapus!' });
-        });
-    } else {
-        console.log(`[BACKEND] File not found for deletion: ${filePath}`);
-        res.status(404).json({ message: 'File tidak ditemukan.' });
+    const params = {
+        Bucket: S3_BUCKET_NAME,
+        Key: serverFileName
+    };
+
+    try {
+        await s3.deleteObject(params).promise();
+        console.log(`[BACKEND] File ${serverFileName} successfully deleted from S3.`);
+        res.status(200).json({ message: 'File berhasil dihapus dari S3!' });
+    } catch (error) {
+        if (error.code === 'NoSuchKey') {
+            console.log(`[BACKEND] File not found in S3 for deletion: ${serverFileName}`);
+            return res.status(404).json({ message: 'File tidak ditemukan di S3.' });
+        }
+        console.error(`[BACKEND] Error deleting file from S3: ${serverFileName}`, error);
+        res.status(500).json({ message: `Gagal menghapus file dari S3: ${error.message}` });
     }
 });
 
