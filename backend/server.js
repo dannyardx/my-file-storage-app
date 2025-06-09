@@ -1,52 +1,55 @@
 // backend/server.js
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const path = require('path'); // <-- KOREKSI SANGAT PENTING: Impor 'path' dengan benar
+const fs = require('fs');     // <-- KOREKSI SANGAT PENTING: Impor 'fs' dengan benar
 const cors = require('cors');
+const AWS = require('aws-sdk'); // Impor AWS SDK
 
 const app = express();
 const port = process.env.PORT || 5000;
 
 // =====================================================================
-// MIDDLEWARE CORS AGRESIIF
+// Konfigurasi AWS S3 - Variabel ini dibaca dari environment variables di Render
+// =====================================================================
+const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME;
+const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
+const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
+const AWS_REGION = process.env.AWS_REGION || 'ap-southeast-1'; // Ganti dengan region S3 Anda
+
+AWS.config.update({
+    accessKeyId: AWS_ACCESS_KEY_ID,
+    secretAccessKey: AWS_SECRET_ACCESS_KEY,
+    region: AWS_REGION
+});
+
+const s3 = new AWS.S3(); // Buat instance S3
+
+
+// =====================================================================
+// MIDDLEWARE CORS AGRESIIF UNTUK PRODUKSI - IZINKAN SEMUA ORIGIN (*)
+// Ini untuk debugging. Nanti bisa diperketat kembali.
 // =====================================================================
 app.options('*', cors({
     origin: '*', // Izinkan semua origin untuk preflight
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // PASTIKAN DELETE ADA DI SINI
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token'], // PASTIKAN x-admin-token ADA DI SINI
-    credentials: true
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Semua metode
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token'], // Header kustom
+    credentials: true // Jika pakai cookie/sesi
 }));
 
 app.use(cors({
     origin: '*', // Izinkan semua origin untuk permintaan utama
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // PASTIKAN DELETE ADA DI SINI
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token'], // PASTIKAN x-admin-token ADA DI SINI
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-token'],
     credentials: true
 }));
 // =====================================================================
 
 app.use(express.json());
 
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
-}
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        const originalName = file.originalname;
-        const fileName = `${Date.now()}-${originalName}`;
-        console.log(`[BACKEND-UPLOAD] Storing file: ${originalName} as ${fileName}`);
-        cb(null, fileName);
-    }
-});
-
+// Konfigurasi Multer untuk membaca file ke dalam memori (bukan disk lokal)
 const upload = multer({
-    storage: storage,
+    storage: multer.memoryStorage(), // Menyimpan file di memori sementara
     fileFilter: (req, file, cb) => {
         const allowedExtensions = ['.zip', '.rar'];
         const ext = path.extname(file.originalname).toLowerCase();
@@ -57,11 +60,12 @@ const upload = multer({
         }
     },
     limits: {
-        fileSize: 100 * 1024 * 1024
+        fileSize: 100 * 1024 * 1024 // Batasan ukuran file 100MB
     }
 });
 
-const ADMIN_SECRET_TOKEN = process.env.ADMIN_SECRET_TOKEN || 'ADMIN123';
+// Middleware untuk otentikasi admin (contoh sederhana)
+const ADMIN_SECRET_TOKEN = process.env.ADMIN_SECRET_TOKEN || 'ADMIN123'; // Mengambil dari env, fallback ke hardcode
 
 const authenticateAdmin = (req, res, next) => {
     const adminToken = req.headers['x-admin-token'];
@@ -81,20 +85,20 @@ app.get('/api/files', async (req, res) => {
         const params = {
             Bucket: S3_BUCKET_NAME
         };
-        const data = await s3.listObjectsV2(params).promise();
+        const data = await s3.listObjectsV2(params).promise(); // List objek di bucket
 
         const fileList = data.Contents.filter(item => {
             const ext = path.extname(item.Key).toLowerCase();
             return ext === '.zip' || ext === '.rar';
         }).map(item => {
-            const serverFileName = item.Key;
+            const serverFileName = item.Key; // Key adalah nama file di S3
             const parts = serverFileName.split('-');
             let originalName = serverFileName;
             if (parts.length > 1 && /^\d+$/.test(parts[0])) {
                 originalName = parts.slice(1).join('-');
             }
             return {
-                id: serverFileName,
+                id: serverFileName, // ID adalah nama file di S3
                 name: originalName,
                 serverFileName: serverFileName,
                 description: `File ${path.extname(originalName).substring(1).toUpperCase()}`,
@@ -119,7 +123,7 @@ app.get('/api/files/info/:fileName', async (req, res) => {
             Bucket: S3_BUCKET_NAME,
             Key: serverFileName
         };
-        const data = await s3.headObject(headParams).promise();
+        const data = await s3.headObject(headParams).promise(); // Dapatkan metadata objek tanpa mengunduh
 
         const parts = serverFileName.split('-');
         let originalName = serverFileName;
@@ -139,7 +143,7 @@ app.get('/api/files/info/:fileName', async (req, res) => {
         console.log("[BACKEND-INFO] File info sent from S3:", fileInfo);
         res.json(fileInfo);
     } catch (error) {
-        if (error.code === 'NotFound') {
+        if (error.code === 'NoSuchKey') {
             console.log(`[BACKEND-INFO] File not found in S3: ${serverFileName}`);
             return res.status(404).json({ message: 'File tidak ditemukan di S3.' });
         }
@@ -163,7 +167,7 @@ app.get('/api/files/download/:fileName', (req, res) => {
         originalName = parts.slice(1).join('-');
     }
 
-    res.attachment(originalName);
+    res.attachment(originalName); // Mengatur header Content-Disposition untuk unduhan
 
     const fileStream = s3.getObject(params).createReadStream();
     fileStream.on('error', (err) => {
@@ -172,9 +176,10 @@ app.get('/api/files/download/:fileName', (req, res) => {
             res.status(500).json({ message: 'Gagal mengunduh file dari S3.' });
         }
     });
-    fileStream.pipe(res);
+    fileStream.pipe(res); // Mengalirkan data file dari S3 langsung ke respons
     console.log(`[BACKEND-DOWNLOAD] Initiated stream for file ${originalName} from S3.`);
 });
+
 
 // ===========================================
 // ROUTES UNTUK ADMIN
@@ -188,28 +193,28 @@ app.post('/api/admin/upload', authenticateAdmin, upload.single('file'), async (r
     }
 
     const originalName = req.file.originalname;
-    const serverFileName = `${Date.now()}-${originalName}`;
+    const serverFileName = `${Date.now()}-${originalName}`; // Nama unik untuk di S3
     const description = req.body.description || `File ${path.extname(originalName).substring(1).toUpperCase()}`;
 
     const params = {
         Bucket: S3_BUCKET_NAME,
-        Key: serverFileName,
-        Body: req.file.buffer,
-        ContentType: req.file.mimetype,
-        ACL: 'public-read'
+        Key: serverFileName, // Nama file di S3
+        Body: req.file.buffer, // Buffer dari Multer memoryStorage
+        ContentType: req.file.mimetype, // Tipe MIME file
+        ACL: 'public-read' // Opsional: Jadikan objek bisa dibaca publik langsung (jika bucket policy mengizinkan)
     };
 
     try {
-        const data = await s3.upload(params).promise();
-        console.log(`[BACKEND] File uploaded to S3: ${data.Location}`);
+        const data = await s3.upload(params).promise(); // Unggah ke S3
+        console.log(`[BACKEND] File uploaded to S3: ${data.Location}`); // data.Location adalah URL publik S3
         res.status(200).json({
             message: 'File berhasil diunggah ke S3!',
             fileName: originalName,
-            serverFileName: serverFileName,
+            serverFileName: serverFileName, // Nama file di S3
             description: description,
             fileSize: req.file.size,
             uploadDate: new Date().toISOString(),
-            s3Location: data.Location
+            s3Location: data.Location // URL publik S3 dari file
         });
     } catch (error) {
         console.error("Error uploading file to S3:", error);
@@ -223,7 +228,7 @@ app.get('/api/admin/files', authenticateAdmin, async (req, res) => {
         const params = {
             Bucket: S3_BUCKET_NAME
         };
-        const data = await s3.listObjectsV2(params).promise();
+        const data = await s3.listObjectsV2(params).promise(); // List objek di bucket
 
         const fileList = data.Contents.filter(item => {
             const ext = path.extname(item.Key).toLowerCase();
@@ -252,8 +257,8 @@ app.get('/api/admin/files', authenticateAdmin, async (req, res) => {
     }
 });
 
-app.delete('/api/admin/files/:fileName', authenticateAdmin, async (req, res) => { // Pastikan ini async
-    const serverFileName = req.params.fileName; // Ubah nama parameter
+app.delete('/api/admin/files/:fileName', authenticateAdmin, async (req, res) => {
+    const serverFileName = req.params.fileName;
     console.log(`[BACKEND] Admin delete request for S3 file: ${serverFileName}`);
 
     const params = {
@@ -262,7 +267,7 @@ app.delete('/api/admin/files/:fileName', authenticateAdmin, async (req, res) => 
     };
 
     try {
-        await s3.deleteObject(params).promise();
+        await s3.deleteObject(params).promise(); // Hapus objek dari S3
         console.log(`[BACKEND] File ${serverFileName} successfully deleted from S3.`);
         res.status(200).json({ message: 'File berhasil dihapus dari S3!' });
     } catch (error) {
