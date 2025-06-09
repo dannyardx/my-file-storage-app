@@ -16,10 +16,14 @@ function Login({ onLoginSuccess, BACKEND_URL }) {
     setError('');
 
     try {
-        // PERBAIKAN PENTING:
-        // Gunakan `${BACKEND_URL}/admin/login` BUKAN `${BACKEND_URL}/api/admin/login`.
-        // Karena BACKEND_URL sudah disetel ke '/api' (dari .env),
-        // menambahkan '/api' lagi akan membuat URL menjadi '/api/api/admin/login', yang menyebabkan 404.
+        // Panggilan API ke backend:
+        // BACKEND_URL sudah disetel ke '/api' (dari .env).
+        // Fungsi Express di backend (netlify/functions/api/index.js) sekarang
+        // mendefinisikan rute seperti app.post('/admin/login', ...).
+        // Jadi, URL yang tepat adalah `${BACKEND_URL}/admin/login`.
+        // Ini akan menghasilkan '/api/admin/login' di frontend.
+        // Netlify.toml akan menerjemahkan ini ke '/.netlify/functions/api/admin/login'.
+        // Dan fungsi Express akan merespons rute '/admin/login'.
         const response = await fetch(`${BACKEND_URL}/admin/login`, {
             method: 'POST',
             headers: {

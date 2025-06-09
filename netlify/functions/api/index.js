@@ -71,10 +71,12 @@ const upload = multer({
 
 // ===========================================
 // ROUTES UNTUK PENGGUNA (PUBLIC)
-// PERBAIKAN PENTING: Hapus prefix '/api' dari definisi rute Express
+// Perbaikan: Pastikan rute Express Anda sesuai dengan yang diterima setelah Netlify rewrite.
+// Netlify.toml mengarahkan /api/* ke fungsi ini. Jadi, rute di sini adalah sisa dari path.
+// Contoh: Jika request /api/files, fungsi menerima /files.
 // ===========================================
 
-app.get('/files', async (req, res) => { // Dulu '/api/files', sekarang '/files'
+app.get('/files', async (req, res) => {
     console.log("[BACKEND] Request received for /files (public list)");
     try {
         const command = new ListObjectsV2Command({
@@ -109,7 +111,7 @@ app.get('/files', async (req, res) => { // Dulu '/api/files', sekarang '/files'
     }
 });
 
-app.get('/files/info/:fileName', async (req, res) => { // Dulu '/api/files/info/:fileName', sekarang '/files/info/:fileName'
+app.get('/files/info/:fileName', async (req, res) => {
     const serverFileName = req.params.fileName;
     console.log(`[BACKEND-INFO] Request received for file info from S3: ${serverFileName}`);
 
@@ -146,7 +148,7 @@ app.get('/files/info/:fileName', async (req, res) => { // Dulu '/api/files/info/
     }
 });
 
-app.get('/files/download/:fileName', async (req, res) => { // Dulu '/api/files/download/:fileName', sekarang '/files/download/:fileName'
+app.get('/files/download/:fileName', async (req, res) => {
     const serverFileName = req.params.fileName;
     console.log(`[BACKEND-DOWNLOAD] Download request received for: ${serverFileName}`);
 
@@ -181,10 +183,10 @@ app.get('/files/download/:fileName', async (req, res) => { // Dulu '/api/files/d
 
 // ===========================================
 // ROUTES UNTUK ADMIN
-// PERBAIKAN PENTING: Hapus prefix '/api' dari definisi rute Express
+// PERBAIKAN: Hapus prefix '/api' dari definisi rute Express
 // ===========================================
 
-app.post('/admin/login', (req, res) => { // Dulu '/api/admin/login', sekarang '/admin/login'
+app.post('/admin/login', (req, res) => {
     const { password } = req.body;
     const { success, token, message } = verifyAdminCredentials(password);
 
@@ -195,7 +197,7 @@ app.post('/admin/login', (req, res) => { // Dulu '/api/admin/login', sekarang '/
     }
 });
 
-app.post('/admin/upload', authenticateToken, upload.single('file'), async (req, res) => { // Dulu '/api/admin/upload', sekarang '/admin/upload'
+app.post('/admin/upload', authenticateToken, upload.single('file'), async (req, res) => {
     console.log("[BACKEND] Admin upload request received.");
     if (!req.file) {
         console.log("[BACKEND] No file uploaded.");
@@ -235,7 +237,7 @@ app.post('/admin/upload', authenticateToken, upload.single('file'), async (req, 
     }
 });
 
-app.get('/admin/files', authenticateToken, async (req, res) => { // Dulu '/api/admin/files', sekarang '/admin/files'
+app.get('/admin/files', authenticateToken, async (req, res) => {
     console.log("[BACKEND] Admin files list request received.");
     try {
         const command = new ListObjectsV2Command({
@@ -270,7 +272,7 @@ app.get('/admin/files', authenticateToken, async (req, res) => { // Dulu '/api/a
     }
 });
 
-app.delete('/admin/files/:fileName', authenticateToken, async (req, res) => { // Dulu '/api/admin/files/:fileName', sekarang '/admin/files/:fileName'
+app.delete('/admin/files/:fileName', authenticateToken, async (req, res) => {
     const serverFileName = req.params.fileName;
     console.log(`[BACKEND] Admin delete request for S3 file: ${serverFileName}`);
 

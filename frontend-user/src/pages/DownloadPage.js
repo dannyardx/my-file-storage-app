@@ -35,8 +35,8 @@ const DownloadPage = ({ BACKEND_URL }) => {
         setLoading(true);
         setError(null);
         try {
-            // PERBAIKAN PENTING:
-            // Gunakan `${BACKEND_URL}/files/info/${fileName}` BUKAN `${BACKEND_URL}/api/files/info/${fileName}`.
+            // Panggilan API ke backend:
+            // Gunakan `${BACKEND_URL}/files/info/${fileName}`.
             const response = await fetch(`${BACKEND_URL}/files/info/${fileName}`);
             if (!response.ok) {
                 if (response.status === 404) {
@@ -67,8 +67,8 @@ const DownloadPage = ({ BACKEND_URL }) => {
     const handleDownload = async () => {
         if (!fileInfo) return;
 
-        // PERBAIKAN PENTING:
-        // Gunakan `${BACKEND_URL}/files/download/${fileName}` BUKAN `${BACKEND_URL}/api/files/download/${fileName}`.
+        // Panggilan API ke backend:
+        // Gunakan `${BACKEND_URL}/files/download/${fileName}`.
         let downloadUrl = `${BACKEND_URL}/files/download/${fileName}`;
         
         // Fitur download file terlindungi password belum didukung sepenuhnya di demo ini.

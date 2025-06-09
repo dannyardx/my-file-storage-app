@@ -1,15 +1,15 @@
 [build]
-  base = "frontend-user" # <-- Pastikan baris ini ada atau setel di Netlify Dashboard
-  publish = "build"      # <-- UBAH INI dari "frontend-user/build" menjadi "build"
-  command = "npm run build" # <-- Pastikan command ini ada dan benar
-  functions = "netlify/functions" # Direktori fungsi Anda
+  base = "frontend-user"
+  publish = "build"
+  command = "npm run build"
+  functions = "netlify/functions"
 
 [functions]
   node_bundler = "esbuild"
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
+  to = "/.netlify/functions/api/:splat" # Ini akan mengarahkan /api/X ke /.netlify/functions/api/X
   status = 200
   force = true
 
