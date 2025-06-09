@@ -1,0 +1,45 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/backend/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/frontend-user/$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type,Authorization" }
+      ]
+    }
+  ],
+  "build": {
+    "env": {
+      "S3_BUCKET_NAME": "@s3_bucket_name",
+      "AWS_ACCESS_KEY_ID": "@aws_access_key_id",
+      "AWS_SECRET_ACCESS_KEY": "@aws_secret_access_key",
+      "AWS_REGION": "ap-southeast-1",
+      "ADMIN_PASSWORD": "@admin_password",
+      "ADMIN_SECRET_TOKEN": "@admin_secret_token",
+      "FRONTEND_USER_URL_PROD": "https://thisismine.my.id"
+    }
+  },
+  "projects": [
+    {
+      "name": "my-ghost-backend",
+      "root": "backend",
+      "buildCommand": "npm install"
+    },
+    {
+      "name": "my-ghost-frontend",
+      "root": "frontend-user",
+      "buildCommand": "npm run build"
+    }
+  ]
+}
