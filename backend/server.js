@@ -1,8 +1,8 @@
 // backend/server.js
 const express = require('express');
 const multer = require('multer');
-const path = require('path'); // KOREKSI: Impor 'path' dengan benar
-const fs = require('fs');     // KOREKSI: Impor 'fs' dengan benar
+const path = require('path'); // <-- KOREKSI SANGAT PENTING: Impor 'path' dengan benar
+const fs = require('fs');     // <-- KOREKSI SANGAT PENTING: Impor 'fs' dengan benar
 const cors = require('cors');
 
 const app = express();
@@ -10,6 +10,9 @@ const port = process.env.PORT || 5000;
 
 // =====================================================================
 // MIDDLEWARE CORS AGRESIIF UNTUK PRODUKSI - IZINKAN SEMUA ORIGIN (*)
+// Ini hanya untuk tujuan debugging dan konfirmasi.
+// JANGAN GUNAKAN INI DI PRODUKSI JANGKA PANJANG TANPA ALASAN KEAMANAN YANG KUAT.
+// Setelah berhasil, KEMBALIKAN KE DAFTAR allowedOrigins YANG SPESIFIK.
 // =====================================================================
 app.options('*', cors({
     origin: '*', // Izinkan semua origin untuk preflight
@@ -41,7 +44,7 @@ const storage = multer.diskStorage({
     },
     filename: (req, file, cb) => {
         const originalName = file.originalname;
-        const fileName = `<span class="math-inline">\{Date\.now\(\)\}\-</span>{originalName}`;
+        const fileName = `${Date.now()}-${originalName}`;
         console.log(`[BACKEND-UPLOAD] Storing file: ${originalName} as ${fileName}`);
         cb(null, fileName);
     }
@@ -172,7 +175,7 @@ app.get('/api/files/download/:fileName', (req, res) => {
                     }
                 }
             } else {
-                console.log(`[BACKEND-DOWNLOAD] File <span class="math-inline">\{originalName\} \(</span>{serverFileName}) successfully downloaded.`);
+                    console.log(`[BACKEND-DOWNLOAD] File ${originalName} (${serverFileName}) successfully downloaded.`);
             }
         });
     } else {
@@ -208,7 +211,7 @@ app.post('/api/admin/upload', authenticateAdmin, upload.single('file'), (req, re
 app.get('/api/admin/files', authenticateAdmin, (req, res) => {
     console.log("[BACKEND] Admin files list request received.");
     if (!fs.existsSync(uploadDir)) {
-        console.log("[BACKEND] Upload directory does not exist, returning empty array for admin.");
+        console.log("[BACKEND] Upload directory does not exist, returning empty array.");
         return res.json([]);
     }
 

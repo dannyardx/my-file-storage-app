@@ -1,47 +1,32 @@
-// frontend-admin/src/App.js
+// frontend-user/src/pages/admin/AdminPage.js
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import './App.css';
-import Login from './Login';
-import ConfirmationModal from './components/ConfirmationModal';
-import PureCssParticles from './components/PureCssParticles';
+// Gunakan kembali gaya admin lama Anda dari App.css admin, tapi sekarang diimpor ke sini.
+// Jika ada konflik dengan App.css user, Anda mungkin perlu membedakan class name-nya.
+import '../../App.css'; // Gaya global App.css user
+import './AdminPage.css'; // Gaya spesifik AdminPage jika diperlukan (akan dibuat)
+import ConfirmationModal from '../../components/admin-components/ConfirmationModal'; // Adjust path
+import Login from './Login'; // Import Login
 
-function App() {
+function AdminPage({ BACKEND_URL, FRONTEND_USER_URL }) { // Menerima URL sebagai props
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [files, setFiles] = useState([]);
   const [newFile, setNewFile] = useState(null);
-  const [newFileDescription, setNewFileDescription] = useState('');
+  const [newFileDescription, setNewFileDescription] = '';
+  const [message, setMessage] = useState('Memuat...'); // Pesan awal untuk daftar file
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [fileToDeleteName, setFileToDeleteName] = useState('');
 
-  // --- Bagian Penting untuk Variabel URL ---
-  // Ini adalah logika yang menentukan URL backend dan frontend user
-  // berdasarkan NODE_ENV.
-  // Saat Netlify membangun (deploy), NODE_ENV otomatis disetel ke 'production'.
-  // Jadi, jika deploy Netlify masih menunjuk ke localhost:5000,
-  // itu berarti Netlify tidak mendapatkan nilai REACT_APP_BACKEND_URL_PROD yang benar,
-  // atau ada cache yang kuat di Netlify.
-  const BACKEND_URL = process.env.NODE_ENV === 'production'
-    ? process.env.REACT_APP_BACKEND_URL_PROD
-    : process.env.REACT_APP_BACKEND_URL_DEV;
-
-  const FRONTEND_USER_URL = process.env.NODE_ENV === 'production'
-    ? process.env.REACT_APP_FRONTEND_USER_URL_PROD
-    : process.env.REACT_APP_FRONTEND_USER_URL_DEV;
-
-  // Pastikan ADMIN_SECRET_TOKEN ini hanya untuk demo di frontend.
-  // Seharusnya diatur di backend.
-  const ADMIN_SECRET_TOKEN = 'ADMIN123';
-  // --- Akhir Bagian Penting ---
-
+  const ADMIN_SECRET_TOKEN = 'ADMIN123'; // Ini tetap harus di Render env var untuk backend!
 
   const showNotification = useCallback((msg, type) => {
     console.log(`[Admin Info] Type: ${type}, Message: ${msg}`);
   }, []);
 
   const fetchFiles = useCallback(async () => {
+    setMessage('Memuat daftar file...');
     try {
       const response = await fetch(`${BACKEND_URL}/api/admin/files`, {
         headers: {
@@ -59,14 +44,20 @@ function App() {
       }
       const data = await response.json();
       setFiles(data);
+      if (data.length === 0) {
+          setMessage('Tidak ada file ZIP/RAR yang diunggah saat ini.');
+      } else {
+          setMessage('');
+      }
     } catch (error) {
       console.error("Error fetching files for admin:", error);
-      showNotification('Gagal memuat daftar file. Pastikan backend berjalan dan token valid.', 'error');
+      setMessage('Gagal memuat daftar file. Pastikan koneksi ke backend stabil.');
     }
   }, [BACKEND_URL, ADMIN_SECRET_TOKEN, setIsLoggedIn, showNotification]);
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
+    // Untuk demo, kita cek hardcode token di frontend. Di produksi, token ini dari backend.
     if (token === ADMIN_SECRET_TOKEN) {
       setIsLoggedIn(true);
       fetchFiles();
@@ -92,6 +83,7 @@ function App() {
         headers: {
           'x-admin-token': ADMIN_SECRET_TOKEN,
         },
+        body: formData,
       });
 
       if (!response.ok) {
@@ -109,7 +101,7 @@ function App() {
       showNotification(`File '${result.fileName}' berhasil diunggah!`, 'success');
       setNewFile(null);
       setNewFileDescription('');
-      document.getElementById('fileInput').value = '';
+      document.getElementById('fileInput').value = ''; // Reset input file
       fetchFiles();
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -126,7 +118,7 @@ function App() {
     setShowDeleteModal(false);
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/admin/files/${fileToDeleteName}`, {
+      const response = await fetch(`<span class="math-inline">{BACKEND_URL}/api/admin/files/</span>{fileToDeleteName}`, {
         method: 'DELETE',
         headers: {
           'x-admin-token': ADMIN_SECRET_TOKEN,
@@ -160,7 +152,7 @@ function App() {
   };
 
   const handleShareClick = async (serverFileName) => {
-    const shareLink = `${FRONTEND_USER_URL}/download/${serverFileName}`;
+    const shareLink = `<span class="math-inline">{FRONTEND_USER_URL}/download/</span>{serverFileName}`;
     try {
       await navigator.clipboard.writeText(shareLink);
       showNotification('Link disalin ke clipboard!', 'success');
@@ -188,16 +180,21 @@ function App() {
 
   return (
     <motion.div
-      className="admin-app-container"
+      className="admin-app-container" // Gunakan class admin-app-container dari App.css lama
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      {/* Animasi Partikel - di belakang konten */}
-      <PureCssParticles />
+      {/* Admin Header (dihapus sebelumnya, jika ingin ada judul di AdminPage, tambahkan di sini) */}
+      <header className="admin-header-inline">
+         <h1>Panel Admin</h1>
+         <p>Kelola file ZIP dan RAR Anda.</p>
+      </header>
 
-      {/* Admin Content */}
       <main className="admin-content-area">
+        {/* Notification component jika Anda ingin menggunakannya */}
+        {/* <Notification message={notification.message} type={notification.type} onClose={() => setNotification({ message: '', type: '' })} /> */}
+
         {/* Unggah File Baru */}
         <motion.section
           className="admin-section upload-section"
@@ -281,7 +278,7 @@ function App() {
               ))}
             </div>
           ) : (
-            <p className="no-files-message">Tidak ada file ZIP/RAR yang diunggah saat ini.</p>
+            <p className="no-files-message">{message}</p>
           )}
         </motion.section>
 
@@ -299,12 +296,7 @@ function App() {
         </motion.button>
       </main>
 
-      {/* Admin Footer */}
-      <footer className="admin-footer">
-        <p>&copy; 2025 Admin File Storage.</p>
-      </footer>
-
-      {/* RENDER MODAL KONFIRMASI */}
+      {/* Render modal konfirmasi */}
       {showDeleteModal && (
         <ConfirmationModal
           title="Hapus File"
@@ -317,4 +309,4 @@ function App() {
   );
 }
 
-export default App;
+export default AdminPage;
