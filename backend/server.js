@@ -2,10 +2,8 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs'); // Pastikan 'fs' diimpor jika digunakan
+const fs = require('fs');
 const cors = require('cors');
-// MIGRATION AWS SDK v2 ke v3
-// const AWS = require('aws-sdk'); // Baris ini harus dikomentari atau dihapus
 const { S3Client, ListObjectsV2Command, HeadObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const { Upload } = require('@aws-sdk/lib-storage');
 
@@ -75,7 +73,8 @@ app.get('/api/files', async (req, res) => {
         });
         const data = await s3Client.send(command);
 
-        const fileList = data.Contents.filter(item => {
+        // Perbaikan: Tambahkan pemeriksaan untuk data.Contents
+        const fileList = (data.Contents || []).filter(item => { // 
             const ext = path.extname(item.Key).toLowerCase();
             return ext === '.zip' || ext === '.rar';
         }).map(item => {
@@ -130,7 +129,7 @@ app.get('/api/files/info/:fileName', async (req, res) => {
         console.log("[BACKEND-INFO] File info sent from S3:", fileInfo);
         res.json(fileInfo);
     } catch (error) {
-        if (error.Code === 'NotFound') { // SDK v3 menggunakan error.Code
+        if (error.Code === 'NotFound') {
             console.log(`[BACKEND-INFO] File not found in S3: ${serverFileName}`);
             return res.status(404).json({ message: 'File tidak ditemukan di S3.' });
         }
@@ -235,7 +234,8 @@ app.get('/api/admin/files', authenticateToken, async (req, res) => {
         });
         const data = await s3Client.send(command);
 
-        const fileList = data.Contents.filter(item => {
+        // Perbaikan: Tambahkan pemeriksaan untuk data.Contents
+        const fileList = (data.Contents || []).filter(item => { // 
             const ext = path.extname(item.Key).toLowerCase();
             return ext === '.zip' || ext === '.rar';
         }).map(item => {
