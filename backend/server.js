@@ -14,9 +14,9 @@ const allowedOrigins = [
     'http://localhost:3000',             // Untuk pengembangan lokal frontend-user
     'http://localhost:3001',             // Untuk pengembangan lokal frontend-admin
     'https://classy-taiyaki-e7ded3.netlify.app',    // <--- HAPUS GARIS MIRING DI AKHIR
-    'https://my-file-storage-app.netlify.app',     // <--- HAPUS GARIS MIRING DI AKHIR
+    'https://storagefile.netlify.app',     // <--- HAPUS GARIS MIRING DI AKHIR
     'https://thisismine.my.id',          // URL domain kustom frontend-user Anda
-    'https://admin.thisismine.my.id'     // URL subdomain kustom frontend-admin Anda
+    'https://storagefile.netlify.app'     // URL subdomain kustom frontend-admin Anda
 ];
 
 app.use(cors({
